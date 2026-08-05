@@ -1,0 +1,40 @@
+name: Feature
+description: A feature to build, usually pulled from FEATURES.md
+title: "[Feature]: "
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: What are we building?
+    validations:
+      required: true
+  - type: dropdown
+    id: tier
+    attributes:
+      label: Tier (per FEATURES.md)
+      options:
+        - 🟢 Core
+        - 🟡 Polish
+        - ⚪ Maybe-later
+    validations:
+      required: true
+  - type: textarea
+    id: done-when
+    attributes:
+      label: Done when...
+      description: Acceptance criteria — how do you know this is finished?
+    validations:
+      required: true
+  - type: textarea
+    id: related
+    attributes:
+      label: Related links
+      description: Design docs, other issues, external references
+    validations:
+      required: false
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes / open questions
+    validations:
+      required: false
