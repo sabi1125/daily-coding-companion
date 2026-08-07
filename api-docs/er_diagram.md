@@ -48,7 +48,7 @@ submitted_solutions {
 
 ingest_runs {
     ingest_run_id uuid pk
-    problem_id uuid fk
+    problem_id uuid fk "nullable"
     status string "not null"
     error string "nullable"
     created_at datetime
