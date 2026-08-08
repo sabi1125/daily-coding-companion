@@ -22,10 +22,13 @@ Summary only — detailed wireframes/mockups are their own separate deliverable.
 |---|---|---|
 | `/` | Today's Problem | Today's parsed problem, an attempt-submission form (solution/notes + self-reported solved-or-not), "Get Help" button. |
 | `/history` | History | List of past problems, filterable by status (`Open` / `Failed` / `Solved`). |
-| `/problems/:id` | Problem detail | Any single problem — reused for both today's and any past problem. |
 | `/settings` | Settings | Gmail connection status, "Reconnect Gmail," disconnect, basic stats, Get Help preferences (free text). |
 
 Sign-in is a conditional state at `/`, not its own route.
+
+Problem detail is a popup, not a route — opened from a click on a row in History, closed
+back to History. Same content/behavior for any past problem (full problem, full attempt
+history, Get Help), just not addressable by its own URL.
 
 ## API surface
 

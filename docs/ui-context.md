@@ -67,10 +67,12 @@ Primary screen, default landing point once signed in.
 - Every problem stays visible permanently regardless of status — nothing is ever removed
   (`REQUIREMENTS.md`, Working a problem) — so this list only grows, never needs an "archived"
   distinction.
+- Clicking a row opens Screen 3 (Problem detail) as a popup — see below.
 
-## Screen 3 — Problem detail (`/problems/:id`)
+## Screen 3 — Problem detail (popup, not a route)
 
-Same screen reused for today's problem and any past problem (`design.md`: Screens).
+Opened from a click on a History row, closes back to History. Not addressable by its own
+URL — same content reused for today's problem and any past problem (`design.md`: Screens).
 
 - Full problem content (same fields as Screen 1).
 - Full attempt history for this problem — every submission (notes/solution, self-reported
