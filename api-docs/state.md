@@ -14,14 +14,16 @@ SignedOut --> SignedIn : sign in again
 ## Daily problem state diagram
 ```mermaid
 stateDiagram-v2
-[*] --> Open : problem received
-Open --> Attempted : submits but not <br> solved before day ends
-Open --> Solved : submits and solved same day as creation
-Attempted --> Solved: solved after day of creation
-Open --> Untouched : never attempted
-Untouched --> Solved : solved at a later date
+[*] --> Open : problem created
+Open --> Failed : submits, self-reports not solved
+Open --> Solved : submits, self-reports solved
+Failed --> Solved : resubmits, self-reports solved
 Solved --> [*]
 ```
+
+"Never touched" isn't a state — it's a derived view (an `Open` problem with zero submission
+rows). Nothing transitions a problem there or out of it; it just is, until a real submission
+event happens.
 
 ## Ingest Failure
 ```mermaid
