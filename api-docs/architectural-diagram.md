@@ -3,8 +3,8 @@
 ```mermaid
 flowchart TD
     Visitor([Visitor, browser]) -->|HTTP| Website
-    Gmail[(Gmail)]
-    ClaudeAPI[(ClaudeAPI)]
+    Gmail[[Gmail]]
+    ClaudeAPI[[ClaudeAPI]]
     subgraph CloudHost
         Backend[Backend Server]
         Website[Web server]
@@ -17,3 +17,5 @@ flowchart TD
     Website --> |AXIOS / REST| Backend
     Cron --> |Triggers Daily| Backend
 ```
+
+> [!NOTE] OAuth consent happens directly between the browser and Google, not shown — this diagram covers steady-state API calls only.
