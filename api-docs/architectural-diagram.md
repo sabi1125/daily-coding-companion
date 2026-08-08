@@ -1,3 +1,5 @@
+# Daily coding companion Architectural diagram
+
 ```mermaid
 flowchart TD
     Visitor([Visitor, browser]) -->|HTTP| Website
