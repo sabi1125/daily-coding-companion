@@ -30,6 +30,7 @@
 | UI components | **shadcn/ui** |
 | Routing | **React Router** |
 | Data fetching / server state | **Axios** — plain HTTP client, no caching layer (TanStack Query considered and skipped as unnecessary at this scale) |
+| Code editor (submitted solution) | **`@uiw/react-codemirror`** — syntax highlighting for the pasted solution field. Chosen over Monaco: Monaco is the full VS Code engine (autocomplete/IntelliSense) which is overkill for displaying/editing an already-written paste, not writing fresh code in-browser. Language auto-detected, not user-selected — nothing in the data model tracks solution language, and this is just for the user's own readability, not system-level processing. |
 
 ---
 
