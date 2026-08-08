@@ -47,6 +47,10 @@ not just running locally.
 - Every Get Help response explains the underlying concept/technique, not just this
   specific problem — that's a fixed part of every response, not a separate optional
   feature you turn on. (Get Help itself is still only ever triggered by the user.)
+- User can save free-text Get Help preferences (e.g. "explain more simply," "skip the
+  walkthrough") — saved once in Settings, appended to every future Get Help request on
+  top of the fixed base prompt. Additive only — never replaces the base prompt or the
+  required concept explanation above.
 
 **Tracking**
 - User can see basic stats — e.g. how many problems are solved, how many are still
@@ -99,6 +103,7 @@ not just running locally.
   a genuinely failed ingest.
 - **Session (auth)** — the signed-in/signed-out state of the Google connection. Not a
   browsing/HTTP session.
-- **needs_review_flag** — a badge on a problem meaning the parse was low-confidence. Not a
-  workflow state, doesn't block attempting the problem.
+- **needs_review_flag** — a badge on a problem meaning parsing failed or came back
+  incomplete (deterministic — no AI confidence scoring involved). Not a workflow state,
+  doesn't block attempting the problem.
 

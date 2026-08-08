@@ -23,7 +23,7 @@ Summary only — detailed wireframes/mockups are their own separate deliverable.
 | `/` | Today's Problem | Today's parsed problem, an attempt-submission form (solution/notes + self-reported solved-or-not), "Get Help" button. |
 | `/history` | History | List of past problems, filterable by status (`Open` / `Failed` / `Solved`). |
 | `/problems/:id` | Problem detail | Any single problem — reused for both today's and any past problem. |
-| `/settings` | Settings | Gmail connection status, "Reconnect Gmail," disconnect, basic stats. |
+| `/settings` | Settings | Gmail connection status, "Reconnect Gmail," disconnect, basic stats, Get Help preferences (free text). |
 
 Sign-in is a conditional state at `/`, not its own route.
 
@@ -37,7 +37,7 @@ file per resource in `api-docs/`.
 | Auth | sign in, OAuth callback, disconnect |
 | Problems | get today's problem, get history, get one by id |
 | Submissions | submit an attempt against a problem |
-| Settings | get settings, update settings (incl. custom Get Help prompt) |
+| Settings | get settings, update settings (incl. Get Help preferences) |
 | Ingest | internal — cron-triggered fetch, retry check on page load |
 
 ## Backend structure
@@ -106,6 +106,11 @@ response) — never a separate call per hint level. Every response also explains
 underlying concept/technique, not just the specific problem — that's a fixed part of the
 base prompt, not optional. Nothing is generated unless the button is clicked, and once
 generated it's cached on the `problems` row — reopening the problem later costs nothing.
+
+**Preferences are additive, not a replacement.** A user can save free-text Get Help
+preferences in Settings (e.g. "explain more simply," "skip the walkthrough") — appended to
+the base prompt on every request, on top of it. They can steer tone/depth/format; they
+can't remove the required concept explanation or the fixed response structure above.
 
 ## Streak
 
