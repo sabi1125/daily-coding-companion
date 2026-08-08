@@ -12,7 +12,7 @@ users {
 settings {
     setting_id uuid pk
     user_id uuid fk
-    ai_prompt text "nullable"
+    get_help_preferences text "nullable"
 }
 
 oauth_credentials {
