@@ -44,9 +44,9 @@ not just running locally.
 - User can request AI-generated help on a problem they're stuck on.
 - Help is only generated when requested, and only once per problem — re-opening it later
   doesn't regenerate it.
-- Help explains the underlying concept/technique the problem is testing, not just this
-  specific problem — this is a base behavior every response is built on, not an optional
-  add-on.
+- Every Get Help response explains the underlying concept/technique, not just this
+  specific problem — that's a fixed part of every response, not a separate optional
+  feature you turn on. (Get Help itself is still only ever triggered by the user.)
 
 **Tracking**
 - User can see basic stats — e.g. how many problems are solved, how many are still
@@ -86,15 +86,17 @@ not just running locally.
   bug, not an issue — always refers to the coding problem entity.
 - **Attempt** — one submission (notes and/or a pasted solution) against a problem. A
   problem can have many attempts over time.
-- **Open / Attempted / Untouched / Solved** — the four states a problem's status resolves
-  to. See `api-docs/state.md`. Not stored — derived from attempts and the problem's date.
+- **Attempted / Untouched / Solved** — the three states a problem's status resolves to
+  (see "Working a problem" above). Not stored — derived from attempts and the problem's
+  date. The full state diagram (including the transient pre-day-end state) will live in
+  the design doc once it's added to the repo.
 - **Ingest / ingest run** — the process that fetches the day's email and turns it into a
   problem. One ingest run per fetch attempt, not per day (a failed attempt can retry).
 - **Get Help** — the specific one-click, one-AI-call assistance feature. Capitalized as a
   feature name, not generic help/support.
 - **Streak** — consecutive days with at least one problem solved. Broken by a day with a
-  problem that went `Untouched`; not broken by a genuinely failed ingest (see the
-  "Streak exemption" note in `design.md`).
+  problem that went `Untouched`; not broken by a genuinely failed ingest — full reasoning
+  will live in the design doc once it's added to the repo.
 - **Session (auth)** — the signed-in/signed-out state of the Google connection. Not a
   browsing/HTTP session.
 - **needs_review_flag** — a badge on a problem meaning the parse was low-confidence. Not a
