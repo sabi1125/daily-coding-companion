@@ -34,11 +34,11 @@ not just running locally.
   stays viewable permanently, regardless of status. Nothing is ever removed from history.
 - User submits an attempt (notes and/or a pasted solution), indicating whether it solved
   the problem — solving and submitting aren't separate steps.
-- A problem is `Solved` once a submission solves it, `Attempted` if submitted but not
-  solved, or `Untouched` if never submitted by the end of the day.
-- Unsolved (`Attempted`/`Untouched`) problems don't need any extra action to stay
-  reachable — they're already in history like everything else, and can be submitted
-  against again at any time until solved.
+- A problem is `Solved` once a submission solves it, or `Failed` if a submission didn't. A
+  problem with zero submissions isn't a separate status — it's just `Open` with nothing
+  recorded against it yet, and stays that way for as long as it takes.
+- Problems don't need any extra action to stay reachable — they're already in history like
+  everything else, and can be submitted against again at any time until solved.
 
 **AI help**
 - User can request AI-generated help on a problem they're stuck on.
@@ -86,17 +86,17 @@ not just running locally.
   bug, not an issue — always refers to the coding problem entity.
 - **Attempt** — one submission (notes and/or a pasted solution) against a problem. A
   problem can have many attempts over time.
-- **Attempted / Untouched / Solved** — the three states a problem's status resolves to
-  (see "Working a problem" above). Not stored — derived from attempts and the problem's
-  date. The full state diagram (including the transient pre-day-end state) will live in
-  the design doc once it's added to the repo.
+- **Open / Failed / Solved** — the real states a problem's lifecycle can be in (see
+  `api-docs/state.md`). `Open` covers "never touched" automatically — a problem with no
+  submissions is just `Open` with nothing recorded yet, not a separate status.
 - **Ingest / ingest run** — the process that fetches the day's email and turns it into a
   problem. One ingest run per fetch attempt, not per day (a failed attempt can retry).
 - **Get Help** — the specific one-click, one-AI-call assistance feature. Capitalized as a
   feature name, not generic help/support.
-- **Streak** — consecutive days with at least one problem solved. Broken by a day with a
-  problem that went `Untouched`; not broken by a genuinely failed ingest — full reasoning
-  will live in the design doc once it's added to the repo.
+- **Streak** — consecutive days with at least one problem solved *on that day*. Computed
+  from submission timestamps, not from a problem's overall status — a problem solved days
+  late still shows `Solved`, but doesn't retroactively fix that day's streak. Not broken by
+  a genuinely failed ingest.
 - **Session (auth)** — the signed-in/signed-out state of the Google connection. Not a
   browsing/HTTP session.
 - **needs_review_flag** — a badge on a problem meaning the parse was low-confidence. Not a
