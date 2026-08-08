@@ -34,8 +34,10 @@ not just running locally.
   stays viewable permanently, regardless of status. Nothing is ever removed from history.
 - User submits an attempt (notes and/or a pasted solution), indicating whether it solved
   the problem — solving and submitting aren't separate steps.
-- A problem is `Solved` once a submission solves it, `Attempted` if submitted but not
-  solved, or `Untouched` if never submitted by the end of the day.
+- A problem is `Solved` once a submission solves it. Otherwise, at the end of its day it's
+  fixed as either `Attempted` (at least one submission that day, none solved it) or
+  `Untouched` (no submission at all that day) — whichever applies at that moment, set once
+  and not re-evaluated afterward, even if a later submission on that problem fails again.
 - Unsolved (`Attempted`/`Untouched`) problems don't need any extra action to stay
   reachable — they're already in history like everything else, and can be submitted
   against again at any time until solved.
