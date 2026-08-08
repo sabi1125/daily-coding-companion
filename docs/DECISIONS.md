@@ -28,8 +28,9 @@ no person present to click anything if a login/approval is needed in the moment.
 
 Trade-off accepted: refresh token expires ~7 days in Testing mode. Handled via a
 `needs-reauth` state + "Reconnect Gmail" button — a missed day is visible and recoverable,
-never a silent failure. Still open: exact reauth UX — a banner, or a dedicated reconnect
-screen.
+never a silent failure. Reauth surfaces via a dedicated reconnect screen, not a banner —
+enough happens there (explaining what expired, why, and the reconnect action) that a
+banner would be too easy to miss or dismiss.
 
 ## D2 — Storing/deploying Daily Coding Problem content
 
@@ -84,6 +85,33 @@ two-toolchain cost knowingly for a solo one-month build.
 Chose a personal account over creating a GitHub organization for this repo. Orgs exist to
 manage multi-person teams with different permission levels — a solo one-month project gets
 zero benefit from that, pure overhead. One repo, personal account.
+
+## D5 — Restricting sign-in to approved users (MVP)
+
+Since the app is deployed on a public URL (D2) and Get Help costs real Claude API money
+per call, there's a real risk: a stranger finds the URL, signs in, and uses the app's
+Claude API budget for free — cost with no control on our end.
+
+### Decision & reasoning
+Already solved by D1's OAuth choice, not new infrastructure. Google's OAuth **Testing**
+publishing status (chosen in D1 to avoid the CASA audit cost) has a hard side effect:
+only emails explicitly added to a test-user allowlist in Google Cloud Console can
+complete sign-in at all. Anyone else hits Google's own "this app hasn't completed
+verification" error before ever reaching the backend — they never get far enough to call
+Get Help, let alone burn API budget.
+
+Deployment stays public (per D2) — Testing mode restricts *who can sign in*, not *where
+the app can be hosted*. The two aren't in tension.
+
+**Decided:** surface this restriction explicitly on the login screen — a line stating
+that sign-in is currently limited to approved users. Not required for the mechanism to
+work (Google already enforces it), but matches the project's "never silently fail"
+principle: a visitor who can't sign in should see why, not just a dead-end button.
+
+**Still open:** this protection only holds while the app stays in Testing mode. Moving to
+Production publishing status (lifting the 100-user cap) reopens this risk and would need
+its own solution — rate limiting, a paid tier, or bring-your-own-API-key — at that point,
+not before.
 
 ## AI cost
 Two calls touch the API: **ingest parse** (once a day at ingest) and **Get Help** (at most
