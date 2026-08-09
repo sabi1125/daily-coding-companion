@@ -98,3 +98,23 @@ Redirects to the login screen if not a valid user.
 
 
 ---
+
+## Sign out API
+### `POST /auth/signout`
+
+**Summary**
+Sign's user out.
+
+**Auth** — Required
+
+**Cookie** - session.session_id
+
+**Responses**
+`204 No Content`
+
+**Errors**
+
+| Status | Category | When | Body |
+|---|---|---|---|
+| 401 | Expected | On invalid session cookie | `{ "message" : "Unauthorized" }` |
+| 500 | Unexpected | On processing error | `{ "message" : "internal server error" }` |
