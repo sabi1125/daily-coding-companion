@@ -17,6 +17,7 @@ redesign — every field below has a direct OpenAPI equivalent.
 ### `METHOD /path`
 
 **Summary** — one line, what this endpoint does.
+**Description** — Description of what we are creating.
 
 **Auth** — required / none. If required, note what identifies the caller (session cookie,
 etc).
