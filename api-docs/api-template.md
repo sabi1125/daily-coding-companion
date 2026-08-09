@@ -1,9 +1,9 @@
 # API Documentation Template
 
-One file, `api-docs/api.md`, `##` section per resource (Auth, Problems, Submissions,
-Settings). Each endpoint uses the structure below. Ingest is internal (cron-triggered, not
-a user-facing endpoint) and gets its own doc, `api-docs/ingest.md` — different auth model,
-doesn't fit this template.
+One file, `api-docs/api.md`. Each endpoint gets a `##` title (short, human-readable, e.g.
+"Google sign in") followed by `### METHOD /path`, using the structure below. Ingest is
+internal (cron-triggered, not a user-facing endpoint) and gets its own doc,
+`api-docs/ingest.md` — different auth model, doesn't fit this template.
 
 Deliberately shaped after OpenAPI's own model (`paths.<path>.<method>` — summary,
 parameters, requestBody, responses keyed by status code) even though this is Markdown, not
@@ -13,6 +13,8 @@ redesign — every field below has a direct OpenAPI equivalent.
 ---
 
 ## Per-endpoint structure
+
+## Endpoint title
 
 ### `METHOD /path`
 
