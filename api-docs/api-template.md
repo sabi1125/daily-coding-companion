@@ -73,6 +73,12 @@ OpenAPI's — each one is still just a normal `responses` entry keyed by status 
 **Summary** — Starts the Google OAuth flow; redirects the browser to Google's consent
 screen.
 
+**Description**
+
+1. API is called.
+2. Builds the authorization URL (`client_id`, `redirect_uri`, `scope`, `state`).
+3. Sets the URL in the `Location` header, returns `302 Found`.
+
 **Auth** — none (this endpoint is how a session begins).
 
 **Request body** — none.
@@ -98,6 +104,13 @@ Location: https://accounts.google.com/o/oauth2/v2/auth?...
 ### `POST /users`
 
 **Summary** — Creates a new user.
+
+**Description**
+
+1. API is called with `name` and `email` in the request body.
+2. Checks `email` isn't already registered.
+3. Creates the user record.
+4. Returns the created user with `201 Created`.
 
 **Auth** — none.
 
