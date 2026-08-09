@@ -89,7 +89,7 @@ URL — same content reused for today's problem and any past problem (`design.md
 - Gmail connection status — reflects `SignedIn` / `NeedsReAuth` / `SignedOut`
   (`api-docs/state.md`, Auth/Session diagram).
 - "Reconnect Gmail" button (dedicated action, ties to NeedsReAuth global state above).
-- Disconnect button.
+- Sign out button.
 - Basic stats — count solved, count unsolved (`REQUIREMENTS.md`, Tracking).
 - **Get Help preferences** — free-text field, saved once, appended to every future Get Help
   request on top of the fixed base prompt. Additive only: copy near this field should make

@@ -11,8 +11,15 @@ users {
 
 settings {
     setting_id uuid pk
-    user_id uuid fk
+    user_id uuid fk "not null"
     get_help_preferences text "nullable"
+}
+
+sessions {
+    session_id uuid PK
+    user_id uuid FK
+    created_at datetime
+    expires_at datetime
 }
 
 oauth_credentials {
@@ -54,6 +61,7 @@ ingest_runs {
     created_at datetime
 }
 
+users ||--o{ sessions : "has none or many"
 users ||--|| oauth_credentials : "has"
 users ||--|{ problems: "has"
 users ||--|| settings: "has"

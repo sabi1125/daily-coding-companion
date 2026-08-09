@@ -22,7 +22,7 @@ Summary only — detailed wireframes/mockups are their own separate deliverable.
 |---|---|---|
 | `/` | Today's Problem | Today's parsed problem, an attempt-submission form (solution/notes + self-reported solved-or-not), "Get Help" button. |
 | `/history` | History | List of past problems, filterable by status (`Open` / `Failed` / `Solved`). |
-| `/settings` | Settings | Gmail connection status, "Reconnect Gmail," disconnect, basic stats, Get Help preferences (free text). |
+| `/settings` | Settings | Gmail connection status, "Reconnect Gmail," sign out, basic stats, Get Help preferences (free text). |
 
 Sign-in is a conditional state at `/`, not its own route.
 
@@ -37,7 +37,7 @@ file per resource in `api-docs/`.
 
 | Resource | Endpoints (rough) |
 |---|---|
-| Auth | sign in, OAuth callback, disconnect |
+| Auth | sign in, OAuth callback, sign out |
 | Problems | get today's problem, get history, get one by id |
 | Submissions | submit an attempt against a problem |
 | Settings | get settings, update settings (incl. Get Help preferences) |

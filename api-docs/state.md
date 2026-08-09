@@ -6,7 +6,7 @@ stateDiagram-v2
 [*] --> SignedIn : sign in with google oauth
 SignedIn --> SignedOut : actively sign out
 SignedIn --> NeedsReAuth : signed out after 7 days <br> due to google specifications
-NeedsReAuth --> SignedOut : signed out via disconnect
+NeedsReAuth --> SignedOut : actively sign out
 NeedsReAuth --> SignedIn : reconnected
 SignedOut --> SignedIn : sign in again
 ```

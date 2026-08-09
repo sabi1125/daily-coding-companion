@@ -17,7 +17,7 @@ not just running locally.
 
 **Auth**
 - User can sign in with Google, which also grants read-only access to their Gmail.
-- User can connect and disconnect their Gmail account.
+- User can sign out.
 - The login screen states that sign-in is currently limited to approved users (see D5 in
   `DECISIONS.md`) — a visitor who can't sign in sees why, not just a dead end.
 
