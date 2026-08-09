@@ -75,9 +75,6 @@ Redirects to the login screen if not a valid user.
 
 **Cookie** - session.session_id
 
-**Responses**
-`302 Found`
-
 **Query parameters**
 
 | Name | Type | Required | Description |
@@ -85,6 +82,9 @@ Redirects to the login screen if not a valid user.
 | code | string | YES | Code set by google which is used to exchange for user creds |
 | state | string | YES | CSRF token set by Google sign in API |
 
+
+**Responses**
+`302 Found`
 
 **Errors**
 
@@ -103,7 +103,7 @@ Redirects to the login screen if not a valid user.
 ### `POST /auth/signout`
 
 **Summary**
-Sign's user out.
+Signs user out.
 
 **Auth** — Required
 
