@@ -39,7 +39,7 @@ file per resource in `api-docs/`.
 |---|---|
 | Auth | sign in, OAuth callback, sign out |
 | Problems | get today's problem, get history, get one by id |
-| Submissions | submit an attempt against a problem |
+| Submissions | submit an attempt against a problem, get all submissions for a problem |
 | Settings | get settings, update settings (incl. Get Help preferences) |
 | Ingest | internal — cron-triggered fetch, retry check on page load |
 
