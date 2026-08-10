@@ -261,3 +261,56 @@ Get's the list of problems according to status.
 |---|---|---|---|
 | 401 | Expected | Invalid/missing/expired session cookie, or <br> a fetched problem's `user_id` doesn't match the caller | `{ "message" : "Unauthorized" }` |
 | 500 | Operational | Reading problem from the database failed | `{ "message" : "internal server error" }` |
+
+---
+
+## Problem detail API
+
+### `GET /problems/{id}`
+
+**Summary**
+Gets a problem.
+
+**Description**
+Gets a problem whose id is `path_param.id = problems.problem_id`.
+
+**Auth** — Required
+
+**Cookie** - session.session_id
+
+**Path parameters**
+
+| Name | Type | Description |
+|---|---|---|
+| id | string | problem id |
+
+
+**Responses**
+
+`200 Success`
+
+```json
+{
+    "result" : {
+          "problem_id": "c39a04db-e00b-426b-9e4a-9b8e2cb29a10",
+          "user_id": "a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d",
+          "raw_problem": "Given an array of integers nums and an integer target, return indices of the two numbers such that they add up to target.",
+          "title": "Two Sum",
+          "problem_text": "Given an array of integers `nums` and an integer `target`, return indices of the two numbers such that they add up to `target`. You may assume that each input would have exactly one solution, and you may not use the same element twice.",
+          "algorithm_tag": "Hash Table",
+          "difficulty": "Easy",
+          "status": "Open",
+          "ai_help": "Consider using a hash map to store each number's complement as you iterate through the array to achieve O(n) time complexity.",
+          "needs_review_flag": false,
+          "created_at": "2026-08-10T14:30:00Z",
+          "updated_at": "2026-08-10T14:35:12Z"
+    }
+}
+```
+
+
+| Status | Category | When | Body |
+|---|---|---|---|
+| 401 | Expected | Invalid/missing/expired session cookie, or <br> a fetched problem's `user_id` doesn't match the caller | `{ "message" : "Unauthorized" }` |
+| 404 | Expected | When problem not found | `{ "message" : "Problem not found" }` |
+| 500 | Operational | Reading problem from the database failed | `{ "message" : "internal server error" }` |
