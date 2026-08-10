@@ -58,6 +58,7 @@ ingest_runs {
     problem_id uuid fk "nullable"
     status string "not null"
     error string "nullable"
+    retried boolean "not null, true if this row is the retry attempt"
     created_at datetime
 }
 

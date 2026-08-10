@@ -32,7 +32,7 @@ Location: google authorization url.
 
 | Status | Category | When | Body |
 |---|---|---|---|
-| 500 | Unexpected | On processing error | `{ "message" : "internal server error" }` |
+| 500 | Unexpected | On processing failure | `{ "message" : "internal server error" }` |
 
 ---
 
@@ -117,4 +117,60 @@ Signs user out.
 | Status | Category | When | Body |
 |---|---|---|---|
 | 401 | Expected | On invalid session cookie | `{ "message" : "Unauthorized" }` |
-| 500 | Unexpected | On processing error | `{ "message" : "internal server error" }` |
+| 500 | Unexpected | On processing failure | `{ "message" : "internal server error" }` |
+
+
+---
+
+## Get Today's problem API
+
+### `GET /problems/today`
+
+**Summary**
+Get's the problem that was generated for that day.
+
+**Description**
+Get's the problem that was generated that day in the following format.
+
+1. Checks current date's problem exists in `problems`.
+2. If problem exists, return it with `200 Success`.
+    - If get from database fails exit with `500 Internal Server Error`.
+3. If problem does not exist, check whether a record with `retried = true` already exists for today.
+4. If exists, the retry already happened and failed — return `404 Not Found`.
+5. If no `retried = true` record exists yet, invoke ingest now, writing the new `ingest_runs` record with `retried = true`.
+    - If the email fetch itself fails (Gmail unreachable, no email found, parse error) exit with `404 Not Found`.
+    - If the fetch succeeds but writing the new `problems`/`ingest_runs` records fails (a DB write failure), exit with `500 Internal Server Error`.
+    - If the fetch succeeds and the write succeeds, return the new problem with `200 Success`.
+
+**Auth** — Required
+
+**Cookie** - session.session_id
+
+**Responses**
+
+`200 Success` — problem exists (step 2), or the retry in step 5 just succeeded.
+
+```json
+{
+      "problem_id": "c39a04db-e00b-426b-9e4a-9b8e2cb29a10",
+      "user_id": "a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d",
+      "raw_problem": "Given an array of integers nums and an integer target, return indices of the two numbers such that they add up to target.",
+      "title": "Two Sum",
+      "problem_text": "Given an array of integers `nums` and an integer `target`, return indices of the two numbers such that they add up to `target`. You may assume that each input would have exactly one solution, and you may not use the same element twice.",
+      "algorithm_tag": "Hash Table",
+      "difficulty": "Easy",
+      "status": "Open",
+      "ai_help": "Consider using a hash map to store each number's complement as you iterate through the array to achieve O(n) time complexity.",
+      "needs_review_flag": false,
+      "created_at": "2026-08-10T14:30:00Z",
+      "updated_at": "2026-08-10T14:35:12Z"
+    }
+```
+
+
+| Status | Category | When | Body |
+|---|---|---|---|
+| 404 | Expected | Retry already used up (either it was already used before this call, or the email fetch just failed during this retry) | `{ "message" : "no problem available today" }` |
+| 500 | Operational | Reading today's problem from the database failed | `{ "message" : "internal server error" }` |
+| 500 | Operational | Email fetch succeeded but writing the new `problems`/`ingest_runs` records failed | `{ "message" : "internal server error" }` |
+| 500 | Unexpected | Any other processing failure not covered above | `{ "message" : "internal server error" }` |
