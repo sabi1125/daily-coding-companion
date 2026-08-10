@@ -310,6 +310,7 @@ Gets a problem whose id is `path_param.id = problems.problem_id`.
 
 | Status | Category | When | Body |
 |---|---|---|---|
+| 400 | Expected | When invalid id(problem_id) | `{ "message" : "Bad Request" }` |
 | 401 | Expected | Invalid/missing/expired session cookie, or <br> a fetched problem's `user_id` doesn't match the caller | `{ "message" : "Unauthorized" }` |
 | 404 | Expected | When problem not found | `{ "message" : "Problem not found" }` |
 | 500 | Operational | Reading problem from the database failed | `{ "message" : "internal server error" }` |
@@ -385,3 +386,102 @@ Updates users setting.
 | 400 | Expected | When `get_help_preferences` is invalid(empty/length exceeds 1000) | `{ "message" : "Bad Request" }` |
 | 401 | Expected | Invalid/missing/expired session cookie | `{ "message" : "Unauthorized" }` |
 | 500 | Operational | Updating settings in database failed | `{ "message" : "internal server error" }` |
+
+---
+
+## Get submissions API
+
+### `GET /submissions/{id}`
+
+**Summary**
+Get submissions related to problem.
+
+**Auth** — Required
+
+**Cookie** - session.session_id
+
+**Path parameters**
+
+| Name | Type | Description |
+|---|---|---|
+| id | string | problem id |
+
+
+**Responses**
+
+`200 Success`
+
+```json
+{
+    "result": [
+        {
+            "solution_id": "90eb0675-eaeb-4485-b5a3-300e9c3dbbe8",
+            "problem_id": "a27dd7a6-a890-4a31-8d3d-5575f207fce0",
+            "solution": "def two_sum(nums, target):\n    seen = {}\n    for i, n in enumerate(nums):\n        if target - n in seen:\n            return [seen[target - n], i]\n        seen[n] = i",
+            "status": "Solved",
+            "submitted_at": "2026-08-10T14:30:00Z"
+        }
+    ],
+    "total": 1
+}
+```
+
+**Errors**
+
+| Status | Category | When | Body |
+|---|---|---|---|
+| 400 | Expected | When invalid id(problem id) | `{ "message" : "Bad Request" }` |
+| 401 | Expected | Invalid/missing/expired session cookie | `{ "message" : "Unauthorized" }` |
+| 500 | Operational | Reading solutions from the database failed | `{ "message" : "internal server error" }` |
+
+---
+
+## Submit submissions API
+
+### `POST /submissions/{id}`
+
+**Summary**
+Insert's submissions.
+
+**Auth** — Required
+
+**Cookie** - session.session_id
+
+**Path parameters**
+
+| Name | Type | Description |
+|---|---|---|
+| id | string | problem id |
+
+
+**Request**
+
+```json
+{
+    "solution": "def two_sum(nums, target):\n    seen = {}\n    for i, n in enumerate(nums):\n        if target - n in seen:\n            return [seen[target - n], i]\n        seen[n] = i",
+    "status": "Solved"
+}
+```
+
+**Responses**
+
+`200 Success`
+
+```json
+{
+    "solution_id": "90eb0675-eaeb-4485-b5a3-300e9c3dbbe8",
+    "problem_id": "a27dd7a6-a890-4a31-8d3d-5575f207fce0",
+    "solution": "def two_sum(nums, target):\n    seen = {}\n    for i, n in enumerate(nums):\n        if target - n in seen:\n            return [seen[target - n], i]\n        seen[n] = i",
+    "status": "Solved",
+    "submitted_at": "2026-08-10T14:30:00Z"
+}
+```
+
+**Errors**
+
+| Status | Category | When | Body |
+|---|---|---|---|
+| 400 | Expected | When invalid id(problem id) | `{ "message" : "Bad Request" }` |
+| 400 | Expected | When invalid submission(empty submission) | `{ "message" : "Bad Request" }` |
+| 401 | Expected | Invalid/missing/expired session cookie | `{ "message" : "Unauthorized" }` |
+| 500 | Operational | Inserting solutions in database failed | `{ "message" : "internal server error" }` |
