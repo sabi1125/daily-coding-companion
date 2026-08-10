@@ -68,18 +68,17 @@ emails, they land between 12am-1am JST, so 2am gives an hour of buffer.
 - One `retried = false` row (cron) and one `retried = true` row (the retry) coexisting per
   user per day is expected, not a collision.
 
-Ingest job runs at 2am JST every day.
-
 **Errors** — every way `RunForUser` can end with `ingest_runs.status = "failed"`, same
 Expected/Operational/Unexpected categories `api-template.md` uses for HTTP endpoints (no
 status code here, this isn't a response):
 
 | Category | When | `ingest_runs.error` |
 |---|---|---|
-| Operational | Refresh token invalid/revoked (7-day testing-mode expiry, or user revoked access) | `"refresh token invalid"` |
+| Expected | Refresh token invalid/revoked (7-day testing-mode expiry, or user revoked access) — not our bug, the user is simply no longer authorized | `"refresh token invalid"` |
 | Operational | Gmail API unreachable or rate-limited | `"gmail unreachable"` |
-| Expected | No Daily Coding Problem email found for today | `"no email found"` |
-| Unexpected | `problems`/`ingest_runs` write fails (DB down, transaction can't commit) | `"write failed"` |
+| Operational | No Daily Coding Problem email found for today — the source not delivering is an external dependency, not a routine client condition | `"no email found"` |
 
-A Claude parse failure is **not** in this list — it doesn't produce `status = "failed"`,
-see step 4.
+A DB write/transaction failure is **not** in this list — per step 5, that case leaves no
+`ingest_runs` row at all rather than one with `status = "failed"`, so there's no `error`
+string to record; it just falls to the lazy retry. A Claude parse failure isn't in this
+list either — it doesn't produce `status = "failed"`, see step 4.
