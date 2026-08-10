@@ -55,6 +55,7 @@ submitted_solutions {
 
 ingest_runs {
     ingest_run_id uuid pk
+    user_id uuid fk "not null"
     problem_id uuid fk "nullable"
     status string "not null"
     error string "nullable"
@@ -66,6 +67,7 @@ users ||--o{ sessions : "has none or many"
 users ||--|| oauth_credentials : "has"
 users ||--|{ problems: "has"
 users ||--|| settings: "has"
+users ||--o{ ingest_runs : "has none or many"
 ingest_runs }|--o| problems : "has none or many"
 problems ||--o{ submitted_solutions: "has none or many"
 ```

@@ -132,12 +132,15 @@ Get's the problem that was generated for that day.
 **Description**
 Get's the problem that was generated that day in the following format.
 
-1. Checks current date's problem exists in `problems`.
-2. If problem exists, return it with `200 Success`.
+1. Validate the session cookie and get the calling `user_id` from it.
+    - If the session is missing/invalid/expired, exit with `401 Unauthorized`.
+2. Checks whether a `problems` row exists for the current date where `user_id` matches the caller.
+3. If it exists, verify the row's `user_id` actually matches the caller's `user_id` (defense-in-depth check, on top of the query already being scoped by `user_id`) before returning it with `200 Success`.
+    - If it somehow doesn't match, exit with `401 Unauthorized` — this should never happen if the query itself is correct, but a problem must never be returned to a user it doesn't belong to, no exceptions.
     - If get from database fails exit with `500 Internal Server Error`.
-3. If problem does not exist, check whether a record with `retried = true` already exists for today.
-4. If exists, the retry already happened and failed — return `404 Not Found`.
-5. If no `retried = true` record exists yet, invoke ingest now, writing the new `ingest_runs` record with `retried = true`.
+4. If no problem exists for this user today, check whether an `ingest_runs` record with `retried = true` already exists for today **for this user specifically** (`user_id` + date, not just date).
+5. If exists, the retry already happened and failed — return `404 Not Found`.
+6. If no `retried = true` record exists yet for this user, invoke ingest for this user's Gmail now, writing the new `ingest_runs` record with this `user_id` and `retried = true`.
     - If the email fetch itself fails (Gmail unreachable, no email found, parse error) exit with `404 Not Found`.
     - If the fetch succeeds but writing the new `problems`/`ingest_runs` records fails (a DB write failure), exit with `500 Internal Server Error`.
     - If the fetch succeeds and the write succeeds, return the new problem with `200 Success`.
@@ -152,25 +155,109 @@ Get's the problem that was generated that day in the following format.
 
 ```json
 {
-      "problem_id": "c39a04db-e00b-426b-9e4a-9b8e2cb29a10",
-      "user_id": "a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d",
-      "raw_problem": "Given an array of integers nums and an integer target, return indices of the two numbers such that they add up to target.",
-      "title": "Two Sum",
-      "problem_text": "Given an array of integers `nums` and an integer `target`, return indices of the two numbers such that they add up to `target`. You may assume that each input would have exactly one solution, and you may not use the same element twice.",
-      "algorithm_tag": "Hash Table",
-      "difficulty": "Easy",
-      "status": "Open",
-      "ai_help": "Consider using a hash map to store each number's complement as you iterate through the array to achieve O(n) time complexity.",
-      "needs_review_flag": false,
-      "created_at": "2026-08-10T14:30:00Z",
-      "updated_at": "2026-08-10T14:35:12Z"
+    "result" : {
+          "problem_id": "c39a04db-e00b-426b-9e4a-9b8e2cb29a10",
+          "user_id": "a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d",
+          "raw_problem": "Given an array of integers nums and an integer target, return indices of the two numbers such that they add up to target.",
+          "title": "Two Sum",
+          "problem_text": "Given an array of integers `nums` and an integer `target`, return indices of the two numbers such that they add up to `target`. You may assume that each input would have exactly one solution, and you may not use the same element twice.",
+          "algorithm_tag": "Hash Table",
+          "difficulty": "Easy",
+          "status": "Open",
+          "ai_help": "Consider using a hash map to store each number's complement as you iterate through the array to achieve O(n) time complexity.",
+          "needs_review_flag": false,
+          "created_at": "2026-08-10T14:30:00Z",
+          "updated_at": "2026-08-10T14:35:12Z"
     }
+}
 ```
 
 
 | Status | Category | When | Body |
 |---|---|---|---|
-| 404 | Expected | Retry already used up (either it was already used before this call, or the email fetch just failed during this retry) | `{ "message" : "no problem available today" }` |
+| 401 | Expected | Invalid/missing/expired session cookie, or <br> a fetched problem's `user_id` doesn't match the caller | `{ "message" : "Unauthorized" }` |
+| 404 | Expected | Retry already used up | `{ "message" : "no problem available today" }` |
 | 500 | Operational | Reading today's problem from the database failed | `{ "message" : "internal server error" }` |
 | 500 | Operational | Email fetch succeeded but writing the new `problems`/`ingest_runs` records failed | `{ "message" : "internal server error" }` |
 | 500 | Unexpected | Any other processing failure not covered above | `{ "message" : "internal server error" }` |
+
+---
+
+## Get problems API
+
+### `GET /problems`
+
+**Summary**
+Get's the list of problems.
+
+**Description**
+Get's the list of problems according to status.
+- All (when no query param is set).
+- Open (when query param `status=Open`).
+- Failed (when query param `status=Failed`).
+- Solved (when query param `status=Solved`).
+
+**Auth** — Required
+
+**Cookie** - session.session_id
+
+**Query parameters**
+
+| Name | Type | Required | Description |
+|---|---|---|---|
+| status | string | NO | status of the problems (statuses: Open/Failed/Solved) |
+
+**Responses**
+
+`200 Success`
+
+```json
+{
+    "result": [
+        {
+              "problem_id": "c39a04db-e00b-426b-9e4a-9b8e2cb29a10",
+              "user_id": "a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d",
+              "raw_problem": "Given an array of integers nums and an integer target, return indices of the two numbers such that they add up to target.",
+              "title": "Two Sum",
+              "problem_text": "Given an array of integers `nums` and an integer `target`, return indices of the two numbers such that they add up to `target`. You may assume that each input would have exactly one solution, and you may not use the same element twice.",
+              "algorithm_tag": "Hash Table",
+              "difficulty": "Easy",
+              "status": "Open",
+              "ai_help": "Consider using a hash map to store each number's complement as you iterate through the array to achieve O(n) time complexity.",
+              "needs_review_flag": false,
+              "created_at": "2026-08-10T14:30:00Z",
+              "updated_at": "2026-08-10T14:35:12Z"
+        },
+        {
+              "problem_id": "c39a04db-e00b-426b-9e4a-9b8e2cb29a10",
+              "user_id": "a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d",
+              "raw_problem": "Given an array of integers nums and an integer target, return indices of the two numbers such that they add up to target.",
+              "title": "Two Sum",
+              "problem_text": "Given an array of integers `nums` and an integer `target`, return indices of the two numbers such that they add up to `target`. You may assume that each input would have exactly one solution, and you may not use the same element twice.",
+              "algorithm_tag": "Hash Table",
+              "difficulty": "Easy",
+              "status": "Open",
+              "ai_help": "Consider using a hash map to store each number's complement as you iterate through the array to achieve O(n) time complexity.",
+              "needs_review_flag": false,
+              "created_at": "2026-08-10T14:30:00Z",
+              "updated_at": "2026-08-10T14:35:12Z"
+        },
+    ],
+    "total": 2
+}
+```
+
+`200 Success (When no problems for a said user)`
+
+```json
+{
+    "result": [],
+    "total": 0
+}
+```
+
+
+| Status | Category | When | Body |
+|---|---|---|---|
+| 401 | Expected | Invalid/missing/expired session cookie, or <br> a fetched problem's `user_id` doesn't match the caller | `{ "message" : "Unauthorized" }` |
+| 500 | Operational | Reading problem from the database failed | `{ "message" : "internal server error" }` |
