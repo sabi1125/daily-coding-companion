@@ -65,11 +65,13 @@ Redirects to the login screen if not a valid user.
     - If not valid exit with `401 Unauthorized`.
 5. If user does not exist in the `users` table create user else move to next step.
     - If user creation fails exit with `500 Internal server error`.
-6. Upsert `oauth_credentials` with `refresh_token`.
+6. If the user was just created in step 5, also create their `settings` row (`user_id`, `get_help_preferences = null`) — every user must have exactly one `settings` row so `GET /settings` never has to handle a missing one.
+    - If settings creation fails exit with `500 Internal server error`.
+7. Upsert `oauth_credentials` with `refresh_token`.
     - If upsert fails exit with `500 Internal server error`.
-7. Insert record in `sessions` table and set cookie with `sessions.session_id`.
+8. Insert record in `sessions` table and set cookie with `sessions.session_id`.
     - If insert fails exit with `500 Internal server error`.
-8. Redirect user to `Today` page.
+9. Redirect user to `Today` page.
 
 **Auth** - None
 
@@ -127,7 +129,7 @@ Signs user out.
 ### `GET /problems/today`
 
 **Summary**
-Get's the problem that was generated for that day.
+Get's users problem that was generated for that day.
 
 **Description**
 Get's the problem that was generated that day in the following format.
@@ -158,7 +160,6 @@ Get's the problem that was generated that day in the following format.
 {
     "result" : {
           "problem_id": "c39a04db-e00b-426b-9e4a-9b8e2cb29a10",
-          "user_id": "a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d",
           "raw_problem": "Given an array of integers nums and an integer target, return indices of the two numbers such that they add up to target.",
           "title": "Two Sum",
           "problem_text": "Given an array of integers `nums` and an integer `target`, return indices of the two numbers such that they add up to `target`. You may assume that each input would have exactly one solution, and you may not use the same element twice.",
@@ -189,7 +190,7 @@ Get's the problem that was generated that day in the following format.
 ### `GET /problems`
 
 **Summary**
-Get's the list of problems.
+Get's the list of users problems.
 
 **Description**
 Get's the list of problems according to status.
@@ -217,7 +218,6 @@ Get's the list of problems according to status.
     "result": [
         {
               "problem_id": "c39a04db-e00b-426b-9e4a-9b8e2cb29a10",
-              "user_id": "a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d",
               "raw_problem": "Given an array of integers nums and an integer target, return indices of the two numbers such that they add up to target.",
               "title": "Two Sum",
               "problem_text": "Given an array of integers `nums` and an integer `target`, return indices of the two numbers such that they add up to `target`. You may assume that each input would have exactly one solution, and you may not use the same element twice.",
@@ -231,7 +231,6 @@ Get's the list of problems according to status.
         },
         {
               "problem_id": "487d6a20-2d6d-430e-93e2-90b12746a7b5",
-              "user_id": "a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d",
               "raw_problem": "Given an array of integers nums and an integer target, return indices of the two numbers such that they add up to target.",
               "title": "Two Sum",
               "problem_text": "Given an array of integers `nums` and an integer `target`, return indices of the two numbers such that they add up to `target`. You may assume that each input would have exactly one solution, and you may not use the same element twice.",
@@ -270,7 +269,7 @@ Get's the list of problems according to status.
 ### `GET /problems/{id}`
 
 **Summary**
-Gets a problem.
+Gets user problem related to `path_param.id`.
 
 **Description**
 Gets a problem whose id is `path_param.id = problems.problem_id`.
@@ -294,7 +293,6 @@ Gets a problem whose id is `path_param.id = problems.problem_id`.
 {
     "result" : {
           "problem_id": "c39a04db-e00b-426b-9e4a-9b8e2cb29a10",
-          "user_id": "a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d",
           "raw_problem": "Given an array of integers nums and an integer target, return indices of the two numbers such that they add up to target.",
           "title": "Two Sum",
           "problem_text": "Given an array of integers `nums` and an integer `target`, return indices of the two numbers such that they add up to `target`. You may assume that each input would have exactly one solution, and you may not use the same element twice.",
@@ -315,3 +313,75 @@ Gets a problem whose id is `path_param.id = problems.problem_id`.
 | 401 | Expected | Invalid/missing/expired session cookie, or <br> a fetched problem's `user_id` doesn't match the caller | `{ "message" : "Unauthorized" }` |
 | 404 | Expected | When problem not found | `{ "message" : "Problem not found" }` |
 | 500 | Operational | Reading problem from the database failed | `{ "message" : "internal server error" }` |
+
+
+---
+
+## Get user setting API
+
+### `GET /settings`
+
+**Summary**
+Gets users setting.
+
+**Auth** — Required
+
+**Cookie** - session.session_id
+
+**Responses**
+
+`200 Success`
+
+```json
+{
+    "setting_id": "04aec174-bf72-457b-bc0a-5075f953de22",
+    "get_help_preferences": "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since 1966, when designers at Letraset and James Mosley, the librarian at St Bride Printing Library in London, took a 1914 Cicero translation and scrambled it to make dummy text for Letraset's Body Type sheets."
+}
+```
+
+**Errors**
+
+| Status | Category | When | Body |
+|---|---|---|---|
+| 401 | Expected | Invalid/missing/expired session cookie | `{ "message" : "Unauthorized" }` |
+| 500 | Operational | Reading settings from the database failed | `{ "message" : "internal server error" }` |
+
+---
+
+## Update user setting API
+
+### `PATCH /settings`
+
+**Summary**
+Updates users setting.
+
+**Auth** — Required
+
+**Cookie** - session.session_id
+
+**Request**
+
+```json
+{
+    "get_help_preferences": "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since 1966, when designers at Letraset and James Mosley, the librarian at St Bride Printing Library in London, took a 1914 Cicero translation and scrambled it to make dummy text for Letraset's Body Type sheets."
+}
+```
+
+**Responses**
+
+`200 Success`
+
+```json
+{
+    "setting_id": "04aec174-bf72-457b-bc0a-5075f953de22",
+    "get_help_preferences": "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since 1966, when designers at Letraset and James Mosley, the librarian at St Bride Printing Library in London, took a 1914 Cicero translation and scrambled it to make dummy text for Letraset's Body Type sheets."
+}
+```
+
+**Errors**
+
+| Status | Category | When | Body |
+|---|---|---|---|
+| 400 | Expected | When `get_help_preferences` is invalid(empty/length exceeds 1000) | `{ "message" : "Bad Request" }` |
+| 401 | Expected | Invalid/missing/expired session cookie | `{ "message" : "Unauthorized" }` |
+| 500 | Operational | Updating settings in database failed | `{ "message" : "internal server error" }` |
