@@ -60,6 +60,7 @@ ingest_runs {
     status string "not null"
     error string "nullable"
     retried boolean "not null, true if this row is the retry attempt"
+    ingest_date date "not null, unique with (user_id, retried) — see note below"
     created_at datetime
 }
 
@@ -71,3 +72,9 @@ users ||--o{ ingest_runs : "has none or many"
 ingest_runs }|--o| problems : "has none or many"
 problems ||--o{ submitted_solutions: "has none or many"
 ```
+
+**`ingest_runs` unique constraint:** `(user_id, ingest_date, retried)` is unique. Prevents
+two concurrent `/problems/today` requests (two tabs, a reload race) from both invoking
+ingest at once — the second insert fails at the DB level instead of silently duplicating
+the fetch or the `problems` row. Still allows the legitimate pair of rows per user per
+day: one `retried = false` (cron) and one `retried = true` (the retry).

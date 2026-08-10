@@ -140,9 +140,10 @@ Get's the problem that was generated that day in the following format.
     - If get from database fails exit with `500 Internal Server Error`.
 4. If no problem exists for this user today, check whether an `ingest_runs` record with `retried = true` already exists for today **for this user specifically** (`user_id` + date, not just date).
 5. If exists, the retry already happened and failed — return `404 Not Found`.
-6. If no `retried = true` record exists yet for this user, invoke ingest for this user's Gmail now, writing the new `ingest_runs` record with this `user_id` and `retried = true`.
-    - If the email fetch itself fails (Gmail unreachable, no email found, parse error) exit with `404 Not Found`.
-    - If the fetch succeeds but writing the new `problems`/`ingest_runs` records fails (a DB write failure), exit with `500 Internal Server Error`.
+6. If no `retried = true` record exists yet for this user, invoke ingest for this user's Gmail now. Write the `ingest_runs` record (`user_id`, `retried = true`) **regardless of the fetch's outcome, success or failure** — this row is what makes the one-retry-per-day cap in step 4 actually work; if it's only written on success, a persistent failure would never trip that guard and every request would keep re-attempting the fetch forever.
+    - The `(user_id, ingest_date, retried)` unique constraint on `ingest_runs` (`er_diagram.md`) means this write can itself fail if another concurrent request already inserted the `retried = true` row first (two tabs, a reload race). Treat that specific failure as "someone else already handled the retry" — re-check for a problem (same as step 2) and return whatever that finds, not a `500`.
+    - If the email fetch itself fails (Gmail unreachable, no email found, parse error), write the `ingest_runs` row with `status = failed` and exit with `404 Not Found`.
+    - If the fetch succeeds but writing the new `problems`/`ingest_runs` records fails for any other reason (a genuine DB write failure), exit with `500 Internal Server Error`.
     - If the fetch succeeds and the write succeeds, return the new problem with `200 Success`.
 
 **Auth** — Required
@@ -151,7 +152,7 @@ Get's the problem that was generated that day in the following format.
 
 **Responses**
 
-`200 Success` — problem exists (step 2), or the retry in step 5 just succeeded.
+`200 Success` — problem exists (step 2), or the retry in step 6 just succeeded.
 
 ```json
 {
@@ -229,7 +230,7 @@ Get's the list of problems according to status.
               "updated_at": "2026-08-10T14:35:12Z"
         },
         {
-              "problem_id": "c39a04db-e00b-426b-9e4a-9b8e2cb29a10",
+              "problem_id": "487d6a20-2d6d-430e-93e2-90b12746a7b5",
               "user_id": "a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d",
               "raw_problem": "Given an array of integers nums and an integer target, return indices of the two numbers such that they add up to target.",
               "title": "Two Sum",
@@ -241,7 +242,7 @@ Get's the list of problems according to status.
               "needs_review_flag": false,
               "created_at": "2026-08-10T14:30:00Z",
               "updated_at": "2026-08-10T14:35:12Z"
-        },
+        }
     ],
     "total": 2
 }
