@@ -1,24 +1,25 @@
 package main
 
 import (
-	"net/http"
-
+	"backend/internal/config"
+	"backend/internal/infrastructure"
 	"backend/internal/log"
 
 	"github.com/labstack/echo/v4"
 )
 
 func main() {
-	logger.Init()
+	zapCfg := config.LoadZapConfig()
+	logger.Init(zapCfg)
 	defer logger.Sync()
+
+	dbCfg := config.LoadDbConfig()
+	db := infrastructure.Connection(dbCfg)
 
 	// Create an Echo instance
 	e := echo.New()
-
-	// Define a route
-	e.GET("/", func(c echo.Context) error {
-		return c.String(http.StatusOK, "Hello, Echo!")
-	})
+	e.Use(logger.MiddlewareLogger(logger.Get()))
+	infrastructure.Router(e, db)
 
 	// Start the server
 	logger.Info("starting server")

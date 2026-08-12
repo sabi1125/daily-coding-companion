@@ -1,27 +1,19 @@
 package logger
 
 import (
-	"os"
+	"time"
 
+	"backend/internal/config"
+
+	"github.com/labstack/echo/v4"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
 
 var log *zap.Logger
 
-// Init initializes the logger from LOG_LEVEL and APP_ENV environment variables.
-func Init() {
-	var level zapcore.Level
-	if err := level.UnmarshalText([]byte(os.Getenv("LOG_LEVEL"))); err != nil {
-		level = zapcore.InfoLevel
-	}
-
-	isDevelopment := os.Getenv("APP_ENV") == "development"
-	encoding := "json"
-	if isDevelopment {
-		encoding = "console"
-	}
-
+// Init initializes the logger from a config.ZapConfig (see config.LoadZapConfig).
+func Init(zapConfig *config.ZapConfig) {
 	encoderConfig := zapcore.EncoderConfig{
 		TimeKey:        "timestamp",
 		LevelKey:       "level",
@@ -36,21 +28,22 @@ func Init() {
 		EncodeCaller:   zapcore.ShortCallerEncoder,
 	}
 
-	config := zap.Config{
-		Level:            zap.NewAtomicLevelAt(level),
-		Development:      isDevelopment,
-		Encoding:         encoding,
+	zc := zap.Config{
+		Level:            zap.NewAtomicLevelAt(zapConfig.LogLevel),
+		Development:      zapConfig.IsDevelopment,
+		Encoding:         zapConfig.Encoding,
 		EncoderConfig:    encoderConfig,
 		OutputPaths:      []string{"stdout"},
 		ErrorOutputPaths: []string{"stderr"},
 	}
 
-	built, err := config.Build()
+	built, err := zc.Build()
 	if err != nil {
 		panic("failed to build logger: " + err.Error())
 	}
 
 	log = built
+	log.Info("Logger initialized")
 }
 
 // Get returns the underlying *zap.Logger, for callers that need direct access.
@@ -110,4 +103,26 @@ func Panic(msg string, fields ...zap.Field) {
 // InitForTest sets up a no-op logger for use in tests.
 func InitForTest() {
 	log = zap.NewNop()
+}
+
+// MiddlewareLogger logs one structured entry per request: method, path,
+// query, response status, client IP, and latency.
+func MiddlewareLogger(logger *zap.Logger) echo.MiddlewareFunc {
+	return func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			start := time.Now()
+			err := next(c)
+
+			logger.Info("Request",
+				zap.String("method", c.Request().Method),
+				zap.String("path", c.Request().URL.Path),
+				zap.String("query", c.Request().URL.RawQuery),
+				zap.Int("status", c.Response().Status),
+				zap.String("client_ip", c.RealIP()),
+				zap.Duration("latency", time.Since(start)),
+			)
+
+			return err
+		}
+	}
 }

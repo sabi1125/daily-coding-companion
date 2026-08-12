@@ -3,6 +3,7 @@ module backend
 go 1.25.1
 
 require (
+	github.com/joho/godotenv v1.5.1
 	github.com/labstack/echo/v4 v4.15.4
 	go.uber.org/zap v1.28.0
 	gorm.io/driver/mysql v1.6.0

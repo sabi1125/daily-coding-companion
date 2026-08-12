@@ -2,27 +2,33 @@ package infrastructure
 
 import (
 	"fmt"
-	"os"
+
+	"backend/internal/config"
+	logger "backend/internal/log"
 
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
 
-// Connection opens a MySQL connection using DB_* environment variables.
-func Connection() (*gorm.DB, error) {
+// Connection opens a MySQL connection using the given DBConfig. Fatals on
+// failure — the app can't run without a DB, so fail loud at boot rather
+// than limp along with a nil *gorm.DB.
+func Connection(cfg *config.DBConfig) *gorm.DB {
 	dsn := fmt.Sprintf(
-		"%s:%s@tcp(%s:%s)/%s?parseTime=true",
-		os.Getenv("DB_USER"),
-		os.Getenv("DB_PASSWORD"),
-		os.Getenv("DB_HOST"),
-		os.Getenv("DB_PORT"),
-		os.Getenv("DB_NAME"),
+		"%s:%s@tcp(%s:%s)/%s?parseTime=true&charset=utf8mb4&loc=Local",
+		cfg.DBUser,
+		cfg.DBPassword,
+		cfg.DBHost,
+		cfg.DBPort,
+		cfg.DBName,
 	)
 
+	logger.Info("connecting to the database...")
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	if err != nil {
-		return nil, err
+		logger.Fatalf("failed to connect to the database: %v", err)
 	}
 
-	return db, nil
+	logger.Info("connected to the database")
+	return db
 }
