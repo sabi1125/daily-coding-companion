@@ -4,6 +4,7 @@ import (
 	"backend/internal/config"
 	"backend/internal/infrastructure"
 	"backend/internal/log"
+	"backend/internal/response"
 
 	"github.com/labstack/echo/v4"
 )
@@ -18,6 +19,7 @@ func main() {
 
 	// Create an Echo instance
 	e := echo.New()
+	e.HTTPErrorHandler = response.ErrorHandler
 	e.Use(logger.MiddlewareLogger(logger.Get()))
 	infrastructure.Router(e, db)
 

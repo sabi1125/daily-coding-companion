@@ -1,6 +1,7 @@
 package infrastructure
 
 import (
+	"backend/internal/config"
 	"backend/internal/controller"
 	"backend/internal/domain/interactor"
 	"backend/internal/domain/repository"
@@ -11,6 +12,7 @@ import (
 
 func Router(e *echo.Echo, db *gorm.DB) {
 	RegisteredHealthRouter(e, db)
+	RegisteredAuthRoutes(e, db)
 }
 
 func RegisteredHealthRouter(e *echo.Echo, db *gorm.DB) {
@@ -20,4 +22,15 @@ func RegisteredHealthRouter(e *echo.Echo, db *gorm.DB) {
 	controller := controller.NewHealthController(interactor)
 
 	health.GET("", controller.Health)
+}
+
+func RegisteredAuthRoutes(e *echo.Echo, db *gorm.DB) {
+	googleConfig := config.LoadGoogleConfigFromEnv()
+
+	auth := e.Group("/auth")
+	repository := repository.NewAuthRepository(db)
+	interactor := interactor.NewAuthInteractor(repository, *googleConfig)
+	controller := controller.NewAuthController(interactor)
+
+	auth.GET("/google", controller.SignIn)
 }
