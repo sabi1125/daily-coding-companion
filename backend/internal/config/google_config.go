@@ -3,12 +3,17 @@ package config
 import (
 	"log"
 	"os"
+
+	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/google"
+	"google.golang.org/api/gmail/v1"
 )
 
 type GoogleConfig struct {
-	GoogleClientID     string
-	GoogleClientSecret string
-	RedirectUrl        string
+	GoogleClientID      string
+	GoogleClientSecret  string
+	RedirectUrl         string
+	CallbackRedirectUrl string
 }
 
 func LoadGoogleConfigFromEnv() *GoogleConfig {
@@ -32,11 +37,31 @@ func LoadGoogleConfigFromEnv() *GoogleConfig {
 		log.Fatal("REDIRECT_URL environment variable is not set")
 	}
 
+	callbackRedirectUrl := os.Getenv("CALLBACK_REDIRECT_URL")
+	if callbackRedirectUrl == "" {
+		log.Fatal("CALLBACK_REDIRECT_URL environment variable is not set")
+	}
+
 	googleConfig := &GoogleConfig{
-		GoogleClientID:     googleClientID,
-		GoogleClientSecret: googleClientSecret,
-		RedirectUrl:        redirectUrl,
+		GoogleClientID:      googleClientID,
+		GoogleClientSecret:  googleClientSecret,
+		RedirectUrl:         redirectUrl,
+		CallbackRedirectUrl: callbackRedirectUrl,
 	}
 
 	return googleConfig
+}
+
+func LoadOauthConfig(googleCfg *GoogleConfig) *oauth2.Config {
+	return &oauth2.Config{
+		ClientID:     googleCfg.GoogleClientID,
+		ClientSecret: googleCfg.GoogleClientSecret,
+		RedirectURL:  googleCfg.RedirectUrl,
+		Scopes: []string{
+			"https://www.googleapis.com/auth/userinfo.email",
+			"https://www.googleapis.com/auth/userinfo.profile",
+			gmail.GmailReadonlyScope,
+		},
+		Endpoint: google.Endpoint,
+	}
 }
