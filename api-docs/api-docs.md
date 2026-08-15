@@ -109,6 +109,20 @@ Redirects to the login screen if not a valid user.
 **Summary**
 Signs user out.
 
+**Description**
+Deletes the caller's session and clears the session cookie. Redirecting to the login
+screen is the frontend's job after it gets a successful response, not this endpoint's —
+this is an API call, not a browser navigation.
+
+1. Extract `session_id` from the cookie and `user_id` from context (both already
+   validated/set by the auth middleware before this handler runs).
+2. Delete the `sessions` row where `session_id` **and** `user_id` both match — scoping by
+   both, not `session_id` alone, so a sign-out request can never touch a session that
+   isn't the caller's own even in principle (defense-in-depth, same reasoning as
+   `GET /problems/today`'s `user_id` re-check).
+    - If the delete fails exit with `500 Internal server error`.
+3. Clear the `session_id` cookie (unset — same `Path` it was set with in `Callback`).
+
 **Auth** — Required
 
 **Cookie** - session.session_id
