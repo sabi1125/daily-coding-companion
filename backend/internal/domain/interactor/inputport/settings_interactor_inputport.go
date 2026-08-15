@@ -7,7 +7,6 @@ import (
 	"backend/internal/domain/entities"
 )
 
-type SettingsRepositoryInputPort interface {
-	CreateSetting(ctx context.Context, setting *entities.Settings) (err error)
+type SettingsInteractorInputPort interface {
 	GetUserSetting(ctx context.Context, userId string) (setting entities.Settings, err error)
 }

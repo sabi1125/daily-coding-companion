@@ -70,3 +70,63 @@ func TestSessionsRepository_CreateSession(t *testing.T) {
 		})
 	}
 }
+
+func TestSessionsRepository_GetSessionById(t *testing.T) {
+	tests := []struct {
+		name      string
+		sessionId string
+		wantErr   bool
+		setupMock func(mock sqlmock.Sqlmock)
+	}{
+		{
+			name:      "returns existing session",
+			sessionId: "session-1",
+			setupMock: func(mock sqlmock.Sqlmock) {
+				mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `sessions` WHERE session_id = ?")).
+					WithArgs("session-1", 1).
+					WillReturnRows(sqlmock.NewRows([]string{"session_id", "user_id"}).
+						AddRow("session-1", "user-1"))
+			},
+		},
+		{
+			name:      "returns nil, nil when no session found",
+			sessionId: "unknown-session",
+			setupMock: func(mock sqlmock.Sqlmock) {
+				mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `sessions` WHERE session_id = ?")).
+					WithArgs("unknown-session", 1).
+					WillReturnRows(sqlmock.NewRows([]string{"session_id", "user_id"}))
+			},
+		},
+		{
+			name:      "returns error on unexpected db failure",
+			sessionId: "session-1",
+			wantErr:   true,
+			setupMock: func(mock sqlmock.Sqlmock) {
+				mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `sessions` WHERE session_id = ?")).
+					WithArgs("session-1", 1).
+					WillReturnError(errors.New("db connection lost"))
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			db, mock, cleanup := setupMockDB(t)
+			defer cleanup()
+
+			tt.setupMock(mock)
+
+			repo := NewSessionsRepository(db)
+			got, err := repo.GetSessionById(context.Background(), tt.sessionId)
+
+			if tt.wantErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+
+			_ = got
+			assert.NoError(t, mock.ExpectationsWereMet())
+		})
+	}
+}

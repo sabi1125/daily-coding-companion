@@ -54,3 +54,18 @@ func (mr *MockSettingsRepositoryInputPortMockRecorder) CreateSetting(ctx, settin
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateSetting", reflect.TypeOf((*MockSettingsRepositoryInputPort)(nil).CreateSetting), ctx, setting)
 }
+
+// GetUserSetting mocks base method.
+func (m *MockSettingsRepositoryInputPort) GetUserSetting(ctx context.Context, userId string) (entities.Settings, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetUserSetting", ctx, userId)
+	ret0, _ := ret[0].(entities.Settings)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetUserSetting indicates an expected call of GetUserSetting.
+func (mr *MockSettingsRepositoryInputPortMockRecorder) GetUserSetting(ctx, userId any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserSetting", reflect.TypeOf((*MockSettingsRepositoryInputPort)(nil).GetUserSetting), ctx, userId)
+}

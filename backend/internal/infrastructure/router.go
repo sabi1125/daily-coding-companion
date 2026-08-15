@@ -5,6 +5,7 @@ import (
 	"backend/internal/controller"
 	"backend/internal/domain/interactor"
 	"backend/internal/domain/repository"
+	"backend/internal/infrastructure/middleware"
 	"backend/internal/util"
 
 	"github.com/labstack/echo/v4"
@@ -20,6 +21,7 @@ func Router(e *echo.Echo, db *gorm.DB) {
 
 	RegisteredHealthRouter(e, db)
 	RegisteredAuthRoutes(e, db, userRepository, oauthRepository, settingRepository, sessionRepository)
+	RegisteredSettingsRoutes(e, db, sessionRepository)
 }
 
 func RegisteredHealthRouter(e *echo.Echo, db *gorm.DB) {
@@ -60,4 +62,14 @@ func RegisteredAuthRoutes(
 
 	auth.GET("/google", controller.SignIn)
 	auth.GET("/google/callback", controller.Callback)
+}
+
+func RegisteredSettingsRoutes(e *echo.Echo, db *gorm.DB, sessionRepository *repository.SessionsRepository) {
+	settings := e.Group("/settings")
+	repository := repository.NewSettingsRepository(db)
+	settings.Use(middleware.Auth(sessionRepository))
+	interactor := interactor.NewSettingsInteractor(repository)
+	controller := controller.NewSettingsController(interactor)
+
+	settings.GET("", controller.GetUserSettings)
 }

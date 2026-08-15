@@ -347,7 +347,7 @@ Gets users setting.
 | Status | Category | When | Body |
 |---|---|---|---|
 | 401 | Expected | Invalid/missing/expired session cookie | `{ "message" : "Unauthorized" }` |
-| 500 | Operational | Reading settings from the database failed | `{ "message" : "internal server error" }` |
+| 500 | Unexpected | Reading settings from the database failed | `{ "message" : "internal server error" }` |
 
 ---
 
