@@ -30,7 +30,7 @@ func (repository *SessionsRepository) CreateSession(ctx context.Context, session
 	}
 
 	if err = db.Create(&session).Error; err != nil {
-		err = response.NewInternalError(err)
+		err = response.NewDatabaseError(err)
 		return
 	}
 	return
@@ -49,7 +49,7 @@ func (repository *SessionsRepository) GetSessionById(ctx context.Context, sessio
 			err = nil
 			return
 		}
-		err = response.NewInternalError(err)
+		err = response.NewDatabaseError(err)
 		return
 	}
 

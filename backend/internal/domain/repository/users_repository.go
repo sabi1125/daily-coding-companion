@@ -29,7 +29,7 @@ func (repository *UsersRepository) CreateUser(ctx context.Context, user *entitie
 	}
 
 	if err = db.Create(&user).Error; err != nil {
-		err = response.NewInternalError(err)
+		err = response.NewDatabaseError(err)
 		return
 	}
 	return

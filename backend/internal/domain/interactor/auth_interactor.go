@@ -57,7 +57,7 @@ func (interactor *AuthInteractor) SignIn(ctx context.Context) (authUrl string, c
 
 	csrf, err = generateState()
 	if err != nil {
-		err = response.NewInternalError(err)
+		err = response.NewDatabaseError(err)
 		return
 	}
 
@@ -88,7 +88,7 @@ func (interactor *AuthInteractor) Callback(ctx context.Context, code string) (se
 	// get id token
 	extractedIdToken, ok := token.Extra("id_token").(string)
 	if !ok || extractedIdToken == "" {
-		err = response.NewInternalError(errors.New("id_token missing or wrong type in token response"))
+		err = response.NewDatabaseError(errors.New("id_token missing or wrong type in token response"))
 		return
 	}
 
@@ -101,7 +101,7 @@ func (interactor *AuthInteractor) Callback(ctx context.Context, code string) (se
 
 	identity, err := extractGoogleIdentity(payload)
 	if err != nil {
-		err = response.NewInternalError(err)
+		err = response.NewDatabaseError(err)
 		return
 	}
 
@@ -139,12 +139,12 @@ func (interactor *AuthInteractor) Callback(ctx context.Context, code string) (se
 func (interactor *AuthInteractor) createUserRecords(ctx context.Context, identity entities.GoogleIdentity, token *oauth2.Token, expires int64) (string, error) {
 	userId, err := interactor.uuidGenerator.NewV7()
 	if err != nil {
-		return "", response.NewInternalError(err)
+		return "", response.NewDatabaseError(err)
 	}
 
 	settingId, err := interactor.uuidGenerator.NewV7()
 	if err != nil {
-		return "", response.NewInternalError(err)
+		return "", response.NewDatabaseError(err)
 	}
 
 	err = interactor.txManager.WithinTransaction(ctx, func(ctx context.Context) error {
@@ -188,7 +188,7 @@ func (interactor *AuthInteractor) createUserRecords(ctx context.Context, identit
 func (interactor *AuthInteractor) createSession(ctx context.Context, userId string) (string, time.Time, error) {
 	sessionId, err := interactor.uuidGenerator.NewV7()
 	if err != nil {
-		return "", time.Time{}, response.NewInternalError(err)
+		return "", time.Time{}, response.NewDatabaseError(err)
 	}
 
 	timeProvider := util.NewTimeProvider()

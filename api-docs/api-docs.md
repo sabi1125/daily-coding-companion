@@ -32,7 +32,7 @@ Location: google authorization url.
 
 | Status | Category | When | Body |
 |---|---|---|---|
-| 500 | Unexpected | On processing failure | `{ "message" : "internal server error" }` |
+| 500 | Operational | On processing failure | `{ "message" : "internal server error" }` |
 
 ---
 
@@ -96,7 +96,7 @@ Redirects to the login screen if not a valid user.
 |---|---|---|---|
 | 400 | Expected |  On bad request | `{ "message" : "Bad Request" }` |
 | 401 | Expected |  On invalid access   | `{ "message" : "Unauthorized" }` |
-| 500 | Unexpected | On processing failure | `{ "message" : "internal server error" }` |
+| 500 | Operational | On processing failure | `{ "message" : "internal server error" }` |
 | 502 | Operational | On errors returned by google | `{ "message" : "Bad gateway" }` |
 | 503 | Operational | On connection failure to google | `{ "message" : "Service Unavailable" }` |
 
@@ -121,7 +121,7 @@ Signs user out.
 | Status | Category | When | Body |
 |---|---|---|---|
 | 401 | Expected | On invalid session cookie | `{ "message" : "Unauthorized" }` |
-| 500 | Unexpected | On processing failure | `{ "message" : "internal server error" }` |
+| 500 | Operational | On processing failure | `{ "message" : "internal server error" }` |
 
 
 ---
@@ -183,7 +183,7 @@ Get's the problem that was generated that day in the following format.
 | 404 | Expected | Retry already used up | `{ "message" : "no problem available today" }` |
 | 500 | Operational | Reading today's problem from the database failed | `{ "message" : "internal server error" }` |
 | 500 | Operational | Email fetch succeeded but writing the new `problems`/`ingest_runs` records failed | `{ "message" : "internal server error" }` |
-| 500 | Unexpected | Any other processing failure not covered above | `{ "message" : "internal server error" }` |
+| 500 | Operational | Any other processing failure not covered above | `{ "message" : "internal server error" }` |
 
 ---
 
@@ -347,7 +347,7 @@ Gets users setting.
 | Status | Category | When | Body |
 |---|---|---|---|
 | 401 | Expected | Invalid/missing/expired session cookie | `{ "message" : "Unauthorized" }` |
-| 500 | Unexpected | Reading settings from the database failed | `{ "message" : "internal server error" }` |
+| 500 | Operational | Reading settings from the database failed | `{ "message" : "internal server error" }` |
 
 ---
 

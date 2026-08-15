@@ -38,7 +38,7 @@ func (repository *OauthRepository) FindUserBySub(ctx context.Context, sub string
 			err = nil
 			return
 		}
-		err = response.NewInternalError(err)
+		err = response.NewDatabaseError(err)
 		return
 	}
 
@@ -54,7 +54,7 @@ func (repository *OauthRepository) CreateOauthCredentials(ctx context.Context, o
 	}
 
 	if err = db.Create(oauthCreds).Error; err != nil {
-		err = response.NewInternalError(err)
+		err = response.NewDatabaseError(err)
 		return
 	}
 	return
@@ -68,7 +68,7 @@ func (repository *OauthRepository) UpdateOauthInformationWithSub(ctx context.Con
 	}
 
 	if err = db.Model(&entities.OauthCredentials{}).Where("oauth_id = ?", sub).Updates(entities.OauthCredentials{RefreshToken: refreshToken, ExpiryAt: expiryAt}).Error; err != nil {
-		err = response.NewInternalError(err)
+		err = response.NewDatabaseError(err)
 		return
 	}
 
