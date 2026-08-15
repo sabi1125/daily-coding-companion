@@ -55,6 +55,20 @@ func (mr *MockSessionsRepositoryInputPortMockRecorder) CreateSession(ctx, sessio
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateSession", reflect.TypeOf((*MockSessionsRepositoryInputPort)(nil).CreateSession), ctx, session)
 }
 
+// DeleteUserSession mocks base method.
+func (m *MockSessionsRepositoryInputPort) DeleteUserSession(ctx context.Context, sessionId, userId string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteUserSession", ctx, sessionId, userId)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteUserSession indicates an expected call of DeleteUserSession.
+func (mr *MockSessionsRepositoryInputPortMockRecorder) DeleteUserSession(ctx, sessionId, userId any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteUserSession", reflect.TypeOf((*MockSessionsRepositoryInputPort)(nil).DeleteUserSession), ctx, sessionId, userId)
+}
+
 // GetSessionById mocks base method.
 func (m *MockSessionsRepositoryInputPort) GetSessionById(ctx context.Context, sessionId string) (*entities.Sessions, error) {
 	m.ctrl.T.Helper()

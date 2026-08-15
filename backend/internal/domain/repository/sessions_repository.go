@@ -56,3 +56,21 @@ func (repository *SessionsRepository) GetSessionById(ctx context.Context, sessio
 	session = &found
 	return
 }
+
+func (repository *SessionsRepository) DeleteUserSession(ctx context.Context, sessionId string, userId string) (err error) {
+	logger.Info("SessionRepository: DeleteUserSession")
+	db := tx.ExtractTx(ctx)
+	if db == nil {
+		db = repository.db
+	}
+
+	// checking the row affected i not necessary the auth middleware already checks if session actually exists
+	// if session never exists we will not be able to reach here
+	res := db.Where("session_id = ? and user_id = ?", sessionId, userId).Delete(&entities.Sessions{})
+	if res.Error != nil {
+		err = response.NewDatabaseError(res.Error)
+		return
+	}
+
+	return
+}

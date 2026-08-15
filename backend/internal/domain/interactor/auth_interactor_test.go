@@ -52,10 +52,6 @@ func TestAuthInteractor_SignIn(t *testing.T) {
 	assert.Equal(t, csrf, parsedUrl.Query().Get("state"))
 }
 
-// TestAuthInteractor_Callback_ExchangeErrors stands a fake token endpoint in
-// for Google's — Exchange/idtoken.Validate are real HTTP calls the
-// interactor doesn't take as an injected interface, so this is the only way
-// to drive the code-exchange error branches without hitting the network.
 func TestAuthInteractor_Callback_ExchangeErrors(t *testing.T) {
 	tests := []struct {
 		name           string
@@ -122,17 +118,6 @@ func TestAuthInteractor_Callback_ExchangeErrors(t *testing.T) {
 	}
 }
 
-// TestAuthInteractor_Callback_PostExchangeErrors covers the two id_token
-// branches reachable without a real, Google-signed JWT: a token response
-// missing id_token entirely, and one where it's present but not a
-// well-formed JWT (idtoken.Validate rejects it during local parsing, before
-// any network call to fetch Google's certs — so still no network needed).
-// FindUserBySub/UpdateOauthInformationWithSub failures sit past a
-// successful idtoken.Validate and aren't reachable this way: Validate is a
-// package-level call (not injected), and validating a fake-but-well-formed
-// JWT would mean signing it against certs we control and getting the
-// interactor to fetch those instead of Google's — not possible without a
-// verifier-interface refactor.
 func TestAuthInteractor_Callback_PostExchangeErrors(t *testing.T) {
 	tests := []struct {
 		name           string
@@ -406,6 +391,60 @@ func TestAuthInteractor_createSession(t *testing.T) {
 			assert.NoError(t, err)
 			assert.Equal(t, testSessionId, sessionId)
 			assert.WithinDuration(t, before.AddDate(0, 0, 30), expiresAt, time.Minute)
+		})
+	}
+}
+
+func TestAuthInteractor_DeleteUserSession(t *testing.T) {
+	ctx := context.Background()
+	testUserId := "test-user-id"
+	testSessionId := "test-session-id"
+
+	errRepo := response.NewDatabaseError(errors.New("repository call failed"))
+
+	tests := []struct {
+		name        string
+		prepareFunc func(msr *inputportMock.MockSessionsRepositoryInputPort)
+		wantedError error
+	}{
+		{
+			name: "success",
+			prepareFunc: func(msr *inputportMock.MockSessionsRepositoryInputPort) {
+				msr.EXPECT().DeleteUserSession(gomock.Any(), testSessionId, testUserId).Return(nil)
+			},
+		},
+		{
+			name: "fails to delete session",
+			prepareFunc: func(msr *inputportMock.MockSessionsRepositoryInputPort) {
+				msr.EXPECT().DeleteUserSession(gomock.Any(), testSessionId, testUserId).Return(errRepo)
+			},
+			wantedError: errRepo,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			mockSessions := inputportMock.NewMockSessionsRepositoryInputPort(ctrl)
+			mockTx := txMock.NewMockManager(ctrl)
+			mockWithinTransaction(mockTx)
+
+			tt.prepareFunc(mockSessions)
+
+			interactor := NewAuthInteractor(
+				oauth2.Config{}, nil, nil, nil, nil, mockSessions, nil, mockTx,
+			)
+
+			err := interactor.DeleteUserSession(ctx, testUserId, testSessionId)
+
+			if tt.wantedError != nil {
+				assert.EqualError(t, err, tt.wantedError.Error())
+				return
+			}
+
+			assert.NoError(t, err)
 		})
 	}
 }

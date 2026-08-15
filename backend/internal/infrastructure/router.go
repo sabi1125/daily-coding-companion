@@ -65,6 +65,7 @@ func RegisteredAuthRoutes(
 
 	auth.GET("/google", controller.SignIn)
 	auth.GET("/google/callback", controller.Callback)
+	auth.POST("/signout", controller.Signout, middleware.Auth(sessionRepository))
 }
 
 func RegisteredSettingsRoutes(

@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -197,6 +198,92 @@ func TestAuthController_Callback_ClearsStateCookie(t *testing.T) {
 
 			if assert.NotNil(t, cleared, "expected oauth_state to be re-set in the response") {
 				assert.Less(t, cleared.MaxAge, 0)
+			}
+		})
+	}
+}
+
+func TestAuthController_Signout(t *testing.T) {
+	tests := []struct {
+		name           string
+		omitCookie     bool
+		cookieValue    string
+		omitUserID     bool
+		mockSetup      func(m *interactorMock.MockAuthInteractorInputPort)
+		expectedStatus int
+	}{
+		{
+			name:        "success — deletes session, clears cookie",
+			cookieValue: "session-1",
+			mockSetup: func(m *interactorMock.MockAuthInteractorInputPort) {
+				m.EXPECT().DeleteUserSession(gomock.Any(), "user-1", "session-1").Return(nil)
+			},
+			expectedStatus: http.StatusNoContent,
+		},
+		{
+			name:           "missing session_id cookie — 401",
+			omitCookie:     true,
+			mockSetup:      func(m *interactorMock.MockAuthInteractorInputPort) {},
+			expectedStatus: http.StatusUnauthorized,
+		},
+		{
+			name:           "empty session_id cookie value — 401",
+			cookieValue:    "",
+			mockSetup:      func(m *interactorMock.MockAuthInteractorInputPort) {},
+			expectedStatus: http.StatusUnauthorized,
+		},
+		{
+			name:           "missing user_id in context — 401",
+			cookieValue:    "session-1",
+			omitUserID:     true,
+			mockSetup:      func(m *interactorMock.MockAuthInteractorInputPort) {},
+			expectedStatus: http.StatusUnauthorized,
+		},
+		{
+			name:        "interactor error propagates",
+			cookieValue: "session-1",
+			mockSetup: func(m *interactorMock.MockAuthInteractorInputPort) {
+				m.EXPECT().DeleteUserSession(gomock.Any(), "user-1", "session-1").Return(response.NewDatabaseError(errors.New("db down")))
+			},
+			expectedStatus: http.StatusInternalServerError,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			mockInteractor := interactorMock.NewMockAuthInteractorInputPort(ctrl)
+			tt.mockSetup(mockInteractor)
+
+			e := newTestEcho()
+			controller := NewAuthController(mockInteractor, "http://localhost:8080/health")
+			e.POST("/auth/signout", controller.Signout)
+
+			req := httptest.NewRequest(http.MethodPost, "/auth/signout", nil)
+			if !tt.omitCookie {
+				req.AddCookie(&http.Cookie{Name: "session_id", Value: tt.cookieValue})
+			}
+			if !tt.omitUserID {
+				req = withUserID(req, "user-1")
+			}
+			rec := httptest.NewRecorder()
+			e.ServeHTTP(rec, req)
+
+			assert.Equal(t, tt.expectedStatus, rec.Code)
+
+			if tt.expectedStatus == http.StatusNoContent {
+				var cleared *http.Cookie
+				for _, c := range rec.Result().Cookies() {
+					if c.Name == "session_id" {
+						cleared = c
+					}
+				}
+				if assert.NotNil(t, cleared, "expected session_id to be re-set in the response") {
+					assert.Empty(t, cleared.Value)
+					assert.Less(t, cleared.MaxAge, 0)
+				}
 			}
 		})
 	}

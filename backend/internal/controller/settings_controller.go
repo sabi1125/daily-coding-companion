@@ -52,6 +52,10 @@ func (controller *SettingsController) UpdateUserSettings(c echo.Context) error {
 
 	ctx := c.Request().Context()
 	userId := middleware.UserIDFromContext(ctx)
+	if userId == "" {
+		err := response.NewUnauthorized(errors.New("invalid user"))
+		return err
+	}
 
 	var updateSettingBody entities.UpdateSettingBody
 	if err := c.Bind(&updateSettingBody); err != nil {

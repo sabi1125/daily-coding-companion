@@ -228,3 +228,17 @@ func generateState() (csrf string, err error) {
 	}
 	return base64.URLEncoding.EncodeToString(b), nil
 }
+
+func (interactor *AuthInteractor) DeleteUserSession(ctx context.Context, userId string, sessionId string) (err error) {
+	logger.Info("AuthInterector: DeleteUserSession")
+
+	err = interactor.txManager.WithinTransaction(ctx, func(ctx context.Context) error {
+		innerErr := interactor.sessionRepository.DeleteUserSession(ctx, sessionId, userId)
+		return innerErr
+	})
+	if err != nil {
+		return
+	}
+
+	return
+}
