@@ -229,34 +229,26 @@ Get's the list of problems according to status.
 
 `200 Success`
 
+This is the History list view — only enough per problem to render a row. Full problem
+content (`raw_problem`, `problem_text`, `algorithm_tag`, `difficulty`, `ai_help`,
+`updated_at`) is what `GET /problems/{id}` is for, not this endpoint.
+
 ```json
 {
     "result": [
         {
               "problem_id": "c39a04db-e00b-426b-9e4a-9b8e2cb29a10",
-              "raw_problem": "Given an array of integers nums and an integer target, return indices of the two numbers such that they add up to target.",
               "title": "Two Sum",
-              "problem_text": "Given an array of integers `nums` and an integer `target`, return indices of the two numbers such that they add up to `target`. You may assume that each input would have exactly one solution, and you may not use the same element twice.",
-              "algorithm_tag": "Hash Table",
-              "difficulty": "Easy",
               "status": "Open",
-              "ai_help": "Consider using a hash map to store each number's complement as you iterate through the array to achieve O(n) time complexity.",
               "needs_review_flag": false,
-              "created_at": "2026-08-10T14:30:00Z",
-              "updated_at": "2026-08-10T14:35:12Z"
+              "created_at": "2026-08-10T14:30:00Z"
         },
         {
               "problem_id": "487d6a20-2d6d-430e-93e2-90b12746a7b5",
-              "raw_problem": "Given an array of integers nums and an integer target, return indices of the two numbers such that they add up to target.",
-              "title": "Two Sum",
-              "problem_text": "Given an array of integers `nums` and an integer `target`, return indices of the two numbers such that they add up to `target`. You may assume that each input would have exactly one solution, and you may not use the same element twice.",
-              "algorithm_tag": "Hash Table",
-              "difficulty": "Easy",
-              "status": "Open",
-              "ai_help": "Consider using a hash map to store each number's complement as you iterate through the array to achieve O(n) time complexity.",
+              "title": "Longest Substring Without Repeating Characters",
+              "status": "Solved",
               "needs_review_flag": false,
-              "created_at": "2026-08-10T14:30:00Z",
-              "updated_at": "2026-08-10T14:35:12Z"
+              "created_at": "2026-08-09T09:12:00Z"
         }
     ],
     "total": 2
@@ -275,7 +267,8 @@ Get's the list of problems according to status.
 
 | Status | Category | When | Body |
 |---|---|---|---|
-| 401 | Expected | Invalid/missing/expired session cookie, or <br> a fetched problem's `user_id` doesn't match the caller | `{ "message" : "Unauthorized" }` |
+| 400 | Expected | `status` query param is set but isn't one of Open/Failed/Solved | `{ "message" : "Bad Request" }` |
+| 401 | Expected | Invalid/missing/expired session cookie | `{ "message" : "Unauthorized" }` |
 | 500 | Operational | Reading problem from the database failed | `{ "message" : "internal server error" }` |
 
 ---
