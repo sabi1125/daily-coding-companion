@@ -34,3 +34,17 @@ func (repository *SettingsRepository) CreateSetting(ctx context.Context, setting
 	}
 	return
 }
+
+func (repository *SettingsRepository) GetUserSetting(ctx context.Context, userId string) (setting entities.Settings, err error) {
+	logger.Infof("SettingsRepository: GetUserSettings")
+	db := tx.ExtractTx(ctx)
+	if db == nil {
+		db = repository.db
+	}
+
+	if err = db.Where("user_id = ?", userId).Take(&setting).Error; err != nil {
+		err = response.NewInternalError(err)
+		return
+	}
+	return
+}

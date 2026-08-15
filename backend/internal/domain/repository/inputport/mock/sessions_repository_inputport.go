@@ -54,3 +54,18 @@ func (mr *MockSessionsRepositoryInputPortMockRecorder) CreateSession(ctx, sessio
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateSession", reflect.TypeOf((*MockSessionsRepositoryInputPort)(nil).CreateSession), ctx, session)
 }
+
+// GetSessionById mocks base method.
+func (m *MockSessionsRepositoryInputPort) GetSessionById(ctx context.Context, sessionId string) (*entities.Sessions, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetSessionById", ctx, sessionId)
+	ret0, _ := ret[0].(*entities.Sessions)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetSessionById indicates an expected call of GetSessionById.
+func (mr *MockSessionsRepositoryInputPortMockRecorder) GetSessionById(ctx, sessionId any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSessionById", reflect.TypeOf((*MockSessionsRepositoryInputPort)(nil).GetSessionById), ctx, sessionId)
+}
