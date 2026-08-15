@@ -42,7 +42,7 @@ func NewProblemsController(problemsInteractor inputport.ProblemsInteractorInputP
 }
 
 func (controller *ProblemsController) GetProblems(c echo.Context) error {
-	logger.Info("ProbelmsController: GetProblems")
+	logger.Info("ProblemsController: GetProblems")
 
 	ctx := c.Request().Context()
 	userId := middleware.UserIDFromContext(ctx)

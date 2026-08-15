@@ -6,8 +6,8 @@ type ProblemStatus string
 
 const (
 	ProblemOpen   = ProblemStatus("Open")
-	ProbelmFailed = ProblemStatus("Failed")
-	ProbelmSolved = ProblemStatus("Solved")
+	ProblemFailed = ProblemStatus("Failed")
+	ProblemSolved = ProblemStatus("Solved")
 )
 
 type GetProblemParams struct {

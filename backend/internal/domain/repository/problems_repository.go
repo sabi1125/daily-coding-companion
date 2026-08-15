@@ -59,10 +59,10 @@ func deriveProblemStatus(submissions []entities.SubmittedSolutions) string {
 	}
 
 	for _, submission := range submissions {
-		if submission.Status == string(entities.ProbelmSolved) {
-			return string(entities.ProbelmSolved)
+		if submission.Status == string(entities.ProblemSolved) {
+			return string(entities.ProblemSolved)
 		}
 	}
 
-	return string(entities.ProbelmFailed)
+	return string(entities.ProblemFailed)
 }
