@@ -49,6 +49,7 @@ Redirects to the login screen if not a valid user.
 
 1. Google calls with `code` and `state` query params.
 2. Check if the `state` matches with the `state` set in `Google sign in API`.
+    - The `state` cookie is a single-use CSRF token — clear it as soon as it's read, before comparing, regardless of whether the check below passes.
     - If `state` does not match exit with `401 Unauthorized`.
     - If the `state` does match carry on to the next process.
 3. Exchange `code` for the following using `Google Client Secret`.
@@ -63,15 +64,16 @@ Redirects to the login screen if not a valid user.
         - If invalid `code` exit with `400 Bad Request`.
 4. Verify `id_token` and get `user_id` stored in `id_token`.
     - If not valid exit with `401 Unauthorized`.
-5. If user does not exist in the `users` table create user else move to next step.
-    - If user creation fails exit with `500 Internal server error`.
+5. Use the `id_token`'s `sub` to check whether a record exists in the `oauth_credentials` table.
+    - If the user is returning, upsert `oauth_credentials` (`refresh_token`, `expiry_at`) with the latest information from this exchange.
+        - If the upsert fails exit with `500 Internal server error`.
+    - If the user is new, create a record in the `users` table, then create the matching `oauth_credentials` record (`oauth_id = sub`, `refresh_token`, `expiry_at`).
+        - If user or `oauth_credentials` creation fails exit with `500 Internal server error`.
 6. If the user was just created in step 5, also create their `settings` row (`user_id`, `get_help_preferences = null`) — every user must have exactly one `settings` row so `GET /settings` never has to handle a missing one.
     - If settings creation fails exit with `500 Internal server error`.
-7. Upsert `oauth_credentials` with `refresh_token`.
-    - If upsert fails exit with `500 Internal server error`.
-8. Insert record in `sessions` table and set cookie with `sessions.session_id`.
+7. Insert record in `sessions` table and set cookie with `sessions.session_id`.
     - If insert fails exit with `500 Internal server error`.
-9. Redirect user to `Today` page.
+8. Redirect user to `Today` page.
 
 **Auth** - None
 

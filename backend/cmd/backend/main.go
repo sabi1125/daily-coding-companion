@@ -5,6 +5,7 @@ import (
 	"backend/internal/infrastructure"
 	"backend/internal/log"
 	"backend/internal/response"
+	"backend/internal/validator"
 
 	"github.com/labstack/echo/v4"
 )
@@ -13,6 +14,8 @@ func main() {
 	zapCfg := config.LoadZapConfig()
 	logger.Init(zapCfg)
 	defer logger.Sync()
+
+	validator.Init()
 
 	dbCfg := config.LoadDbConfig()
 	db := infrastructure.Connection(dbCfg)
