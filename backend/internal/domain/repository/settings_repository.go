@@ -58,7 +58,7 @@ func (repository *SettingsRepository) UpdateUserSetting(ctx context.Context, use
 
 	err = db.Model(&entities.Settings{}).Where("user_id = ?", userId).Update("get_help_preferences", preferences).Error
 	if err != nil {
-		err = response.NewInternalError(err)
+		err = response.NewDatabaseError(err)
 		return
 	}
 	return
