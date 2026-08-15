@@ -29,7 +29,7 @@ func (repository *SettingsRepository) CreateSetting(ctx context.Context, setting
 	}
 
 	if err = db.Create(&setting).Error; err != nil {
-		err = response.NewInternalError(err)
+		err = response.NewDatabaseError(err)
 		return
 	}
 	return
@@ -43,7 +43,7 @@ func (repository *SettingsRepository) GetUserSetting(ctx context.Context, userId
 	}
 
 	if err = db.Where("user_id = ?", userId).Take(&setting).Error; err != nil {
-		err = response.NewInternalError(err)
+		err = response.NewDatabaseError(err)
 		return
 	}
 	return

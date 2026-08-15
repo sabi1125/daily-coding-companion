@@ -6,6 +6,7 @@ import (
 
 	"backend/internal/domain/entities"
 	"backend/internal/domain/interactor/inputport"
+	"backend/internal/infrastructure/middleware"
 	logger "backend/internal/log"
 	"backend/internal/response"
 	"backend/internal/validator"
@@ -106,4 +107,42 @@ func (controller *AuthController) Callback(c echo.Context) error {
 	})
 
 	return c.Redirect(http.StatusFound, controller.callbackRedirectUrl)
+}
+
+func (controller *AuthController) Signout(c echo.Context) error {
+	logger.Info("AuthController: Signout")
+
+	cookie, err := c.Cookie("session_id")
+	if err != nil {
+		return response.NewUnauthorized(err)
+	}
+
+	if cookie.Value == "" {
+		err = response.NewUnauthorized(errors.New("cookie value could not be read"))
+		return err
+	}
+
+	ctx := c.Request().Context()
+	userId := middleware.UserIDFromContext(ctx)
+	if userId == "" {
+		err := response.NewUnauthorized(errors.New("invalid user"))
+		return err
+	}
+
+	err = controller.authInteractor.DeleteUserSession(ctx, userId, cookie.Value)
+	if err != nil {
+		return err
+	}
+
+	c.SetCookie(&http.Cookie{
+		Name:     "session_id",
+		Value:    "",
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   true,
+		SameSite: http.SameSiteLaxMode,
+		MaxAge:   -1,
+	})
+
+	return c.NoContent(http.StatusNoContent)
 }

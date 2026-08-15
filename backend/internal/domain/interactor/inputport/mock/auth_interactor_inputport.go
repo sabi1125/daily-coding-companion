@@ -57,6 +57,20 @@ func (mr *MockAuthInteractorInputPortMockRecorder) Callback(ctx, code any) *gomo
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Callback", reflect.TypeOf((*MockAuthInteractorInputPort)(nil).Callback), ctx, code)
 }
 
+// DeleteUserSession mocks base method.
+func (m *MockAuthInteractorInputPort) DeleteUserSession(ctx context.Context, userId, session_id string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteUserSession", ctx, userId, session_id)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteUserSession indicates an expected call of DeleteUserSession.
+func (mr *MockAuthInteractorInputPortMockRecorder) DeleteUserSession(ctx, userId, session_id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteUserSession", reflect.TypeOf((*MockAuthInteractorInputPort)(nil).DeleteUserSession), ctx, userId, session_id)
+}
+
 // SignIn mocks base method.
 func (m *MockAuthInteractorInputPort) SignIn(ctx context.Context) (string, string, error) {
 	m.ctrl.T.Helper()
