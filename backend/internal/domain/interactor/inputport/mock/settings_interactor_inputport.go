@@ -55,3 +55,18 @@ func (mr *MockSettingsInteractorInputPortMockRecorder) GetUserSetting(ctx, userI
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserSetting", reflect.TypeOf((*MockSettingsInteractorInputPort)(nil).GetUserSetting), ctx, userId)
 }
+
+// UpdateUserSetting mocks base method.
+func (m *MockSettingsInteractorInputPort) UpdateUserSetting(ctx context.Context, userId, preference string) (entities.Settings, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateUserSetting", ctx, userId, preference)
+	ret0, _ := ret[0].(entities.Settings)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpdateUserSetting indicates an expected call of UpdateUserSetting.
+func (mr *MockSettingsInteractorInputPortMockRecorder) UpdateUserSetting(ctx, userId, preference any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateUserSetting", reflect.TypeOf((*MockSettingsInteractorInputPort)(nil).UpdateUserSetting), ctx, userId, preference)
+}

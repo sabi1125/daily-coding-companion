@@ -48,3 +48,18 @@ func (repository *SettingsRepository) GetUserSetting(ctx context.Context, userId
 	}
 	return
 }
+
+func (repository *SettingsRepository) UpdateUserSetting(ctx context.Context, userId string, preferences string) (err error) {
+	logger.Infof("SettingsRepository: UpdateuserSetting")
+	db := tx.ExtractTx(ctx)
+	if db == nil {
+		db = repository.db
+	}
+
+	err = db.Model(&entities.Settings{}).Where("user_id = ?", userId).Update("get_help_preferences", preferences).Error
+	if err != nil {
+		err = response.NewInternalError(err)
+		return
+	}
+	return
+}

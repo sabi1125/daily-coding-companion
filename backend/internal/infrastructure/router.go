@@ -6,6 +6,7 @@ import (
 	"backend/internal/domain/interactor"
 	"backend/internal/domain/repository"
 	"backend/internal/infrastructure/middleware"
+	"backend/internal/tx"
 	"backend/internal/util"
 
 	"github.com/labstack/echo/v4"
@@ -19,9 +20,11 @@ func Router(e *echo.Echo, db *gorm.DB) {
 	settingRepository := repository.NewSettingsRepository(db)
 	sessionRepository := repository.NewSessionsRepository(db)
 
+	txManager := NewTransactionManager(db)
+
 	RegisteredHealthRouter(e, db)
-	RegisteredAuthRoutes(e, db, userRepository, oauthRepository, settingRepository, sessionRepository)
-	RegisteredSettingsRoutes(e, db, sessionRepository)
+	RegisteredAuthRoutes(e, db, userRepository, oauthRepository, settingRepository, sessionRepository, txManager)
+	RegisteredSettingsRoutes(e, db, sessionRepository, txManager)
 }
 
 func RegisteredHealthRouter(e *echo.Echo, db *gorm.DB) {
@@ -40,6 +43,7 @@ func RegisteredAuthRoutes(
 	oauthRepository *repository.OauthRepository,
 	settingRepository *repository.SettingsRepository,
 	sessionRepository *repository.SessionsRepository,
+	txManager tx.Manager,
 ) {
 	googleCfg := config.LoadGoogleConfigFromEnv()
 	googleOauthCfg := config.LoadOauthConfig(googleCfg)
@@ -47,7 +51,6 @@ func RegisteredAuthRoutes(
 	auth := e.Group("/auth")
 	repository := repository.NewAuthRepository(db)
 	uuidGenerator := util.NewUUIDGenerator()
-	txManager := NewTransactionManager(db)
 	interactor := interactor.NewAuthInteractor(
 		*googleOauthCfg,
 		repository,
@@ -64,12 +67,18 @@ func RegisteredAuthRoutes(
 	auth.GET("/google/callback", controller.Callback)
 }
 
-func RegisteredSettingsRoutes(e *echo.Echo, db *gorm.DB, sessionRepository *repository.SessionsRepository) {
+func RegisteredSettingsRoutes(
+	e *echo.Echo,
+	db *gorm.DB,
+	sessionRepository *repository.SessionsRepository,
+	txManager tx.Manager,
+) {
 	settings := e.Group("/settings")
 	repository := repository.NewSettingsRepository(db)
 	settings.Use(middleware.Auth(sessionRepository))
-	interactor := interactor.NewSettingsInteractor(repository)
+	interactor := interactor.NewSettingsInteractor(repository, txManager)
 	controller := controller.NewSettingsController(interactor)
 
 	settings.GET("", controller.GetUserSettings)
+	settings.PATCH("", controller.UpdateUserSettings)
 }

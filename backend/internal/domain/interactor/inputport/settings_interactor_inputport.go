@@ -9,4 +9,5 @@ import (
 
 type SettingsInteractorInputPort interface {
 	GetUserSetting(ctx context.Context, userId string) (setting entities.Settings, err error)
+	UpdateUserSetting(ctx context.Context, userId string, preference string) (setting entities.Settings, err error)
 }

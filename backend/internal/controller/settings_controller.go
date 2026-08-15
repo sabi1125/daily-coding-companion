@@ -9,6 +9,7 @@ import (
 	"backend/internal/infrastructure/middleware"
 	logger "backend/internal/log"
 	"backend/internal/response"
+	"backend/internal/validator"
 
 	"github.com/labstack/echo/v4"
 )
@@ -43,5 +44,34 @@ func (controller *SettingsController) GetUserSettings(c echo.Context) error {
 		GetHelpPreferences: setting.GetHelpPreferences,
 	}
 
+	return c.JSON(http.StatusOK, res)
+}
+
+func (controller *SettingsController) UpdateUserSettings(c echo.Context) error {
+	logger.Info("SettingsController: UpdateUserSettings")
+
+	ctx := c.Request().Context()
+	userId := middleware.UserIDFromContext(ctx)
+
+	var updateSettingBody entities.UpdateSettingBody
+	if err := c.Bind(&updateSettingBody); err != nil {
+		err = response.NewBadRequest(err)
+		return err
+	}
+
+	if err := validator.ValidateStruct(&updateSettingBody); err != nil {
+		err = response.NewBadRequest(err)
+		return err
+	}
+
+	setting, err := controller.settingsInteractor.UpdateUserSetting(ctx, userId, updateSettingBody.GetHelpPreferences)
+	if err != nil {
+		return err
+	}
+
+	res := &entities.Settings{
+		SettingID:          setting.SettingID,
+		GetHelpPreferences: setting.GetHelpPreferences,
+	}
 	return c.JSON(http.StatusOK, res)
 }
