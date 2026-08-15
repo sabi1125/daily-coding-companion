@@ -25,6 +25,7 @@ func Router(e *echo.Echo, db *gorm.DB) {
 	RegisteredHealthRouter(e, db)
 	RegisteredAuthRoutes(e, db, userRepository, oauthRepository, settingRepository, sessionRepository, txManager)
 	RegisteredSettingsRoutes(e, db, sessionRepository, txManager)
+	RegisteredProblemsRoutes(e, db, sessionRepository)
 }
 
 func RegisteredHealthRouter(e *echo.Echo, db *gorm.DB) {
@@ -75,11 +76,25 @@ func RegisteredSettingsRoutes(
 	txManager tx.Manager,
 ) {
 	settings := e.Group("/settings")
-	repository := repository.NewSettingsRepository(db)
 	settings.Use(middleware.Auth(sessionRepository))
+	repository := repository.NewSettingsRepository(db)
 	interactor := interactor.NewSettingsInteractor(repository, txManager)
 	controller := controller.NewSettingsController(interactor)
 
 	settings.GET("", controller.GetUserSettings)
 	settings.PATCH("", controller.UpdateUserSettings)
+}
+
+func RegisteredProblemsRoutes(
+	e *echo.Echo,
+	db *gorm.DB,
+	sessionRepository *repository.SessionsRepository,
+) {
+	problems := e.Group("/problems")
+	problems.Use(middleware.Auth(sessionRepository))
+	repository := repository.NewProblemsRepository(db)
+	interactor := interactor.NewProblemsInteractor(repository)
+	controller := controller.NewProblemsController(interactor)
+
+	problems.GET("", controller.GetProblems)
 }
