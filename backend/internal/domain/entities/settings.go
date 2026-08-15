@@ -5,3 +5,7 @@ type Settings struct {
 	UserID             string  `json:"-" gorm:"column:user_id"`
 	GetHelpPreferences *string `json:"get_help_preferences" gorm:"column:get_help_preferences"`
 }
+
+type UpdateSettingBody struct {
+	GetHelpPreferences string `json:"get_help_preferences" validate:"required,min=1,max=1000"`
+}
