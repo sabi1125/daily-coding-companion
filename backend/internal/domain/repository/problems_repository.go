@@ -83,3 +83,17 @@ func (repository *ProblemsRepository) GetProblemDetails(ctx context.Context, use
 	}
 	return
 }
+
+func (repository *ProblemsRepository) CreateProblem(ctx context.Context, problem *entities.Problems) (err error) {
+	logger.Infof("ProblemsRepository: CreateProblem")
+	db := tx.ExtractTx(ctx)
+	if db == nil {
+		db = repository.db
+	}
+
+	if err = db.Create(problem).Error; err != nil {
+		err = response.NewDatabaseError(err)
+		return
+	}
+	return
+}
