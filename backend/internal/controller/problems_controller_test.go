@@ -90,10 +90,6 @@ func TestProblemsController_GetProblems(t *testing.T) {
 	}
 }
 
-// TestProblemsController_GetProblems_ResponseShape locks in the History
-// list shape: {result, total}, with only what the list view renders
-// (problem_id/title/status/needs_review_flag/created_at) — full problem
-// content belongs to GET /problems/{id}, not this endpoint.
 func TestProblemsController_GetProblems_ResponseShape(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
@@ -139,39 +135,58 @@ func TestProblemsController_GetProblems_ResponseShape(t *testing.T) {
 	}
 }
 
+const testProblemID = "c39a04db-e00b-426b-9e4a-9b8e2cb29a10"
+
 func TestProblemsController_GetProblemDetail(t *testing.T) {
 	tests := []struct {
 		name           string
+		problemID      string
 		omitUserID     bool
 		mockSetup      func(m *interactorMock.MockProblemsInteractorInputPort)
 		expectedStatus int
 	}{
 		{
-			name: "success",
+			name:      "success",
+			problemID: testProblemID,
 			mockSetup: func(m *interactorMock.MockProblemsInteractorInputPort) {
-				m.EXPECT().GetProblemDetails(gomock.Any(), "user-1", "problem-1").
-					Return(entities.Problems{ProblemId: "problem-1", RawProblem: "raw text"}, nil)
+				m.EXPECT().GetProblemDetails(gomock.Any(), "user-1", testProblemID).
+					Return(entities.Problems{ProblemId: testProblemID, RawProblem: "raw text"}, nil)
 			},
 			expectedStatus: http.StatusOK,
 		},
 		{
 			name:           "missing user_id — 401",
+			problemID:      testProblemID,
 			omitUserID:     true,
 			mockSetup:      func(m *interactorMock.MockProblemsInteractorInputPort) {},
 			expectedStatus: http.StatusUnauthorized,
 		},
 		{
-			name: "problem not found — 404",
+			name:           "id isn't a uuid — 400",
+			problemID:      "problem-1",
+			mockSetup:      func(m *interactorMock.MockProblemsInteractorInputPort) {},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name:           "uuid-shaped but malformed id — 400",
+			problemID:      "c39a04db-e00b-426b-9e4a-9b8e2cb29a1",
+			mockSetup:      func(m *interactorMock.MockProblemsInteractorInputPort) {},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name:      "problem not found — 404",
+			problemID: testProblemID,
 			mockSetup: func(m *interactorMock.MockProblemsInteractorInputPort) {
-				m.EXPECT().GetProblemDetails(gomock.Any(), "user-1", "problem-1").
+				m.EXPECT().GetProblemDetails(gomock.Any(), "user-1", testProblemID).
 					Return(entities.Problems{}, response.NewProblemNotFound(errors.New("not found")))
 			},
 			expectedStatus: http.StatusNotFound,
 		},
 		{
-			name: "interactor error propagates",
+			name:      "interactor error propagates",
+			problemID: testProblemID,
 			mockSetup: func(m *interactorMock.MockProblemsInteractorInputPort) {
-				m.EXPECT().GetProblemDetails(gomock.Any(), "user-1", "problem-1").
+				m.EXPECT().GetProblemDetails(gomock.Any(), "user-1", testProblemID).
 					Return(entities.Problems{}, response.NewDatabaseError(errors.New("db down")))
 			},
 			expectedStatus: http.StatusInternalServerError,
@@ -190,7 +205,7 @@ func TestProblemsController_GetProblemDetail(t *testing.T) {
 			controller := NewProblemsController(mockInteractor)
 			e.GET("/problems/:id", controller.GetProblemDetail)
 
-			req := httptest.NewRequest(http.MethodGet, "/problems/problem-1", nil)
+			req := httptest.NewRequest(http.MethodGet, "/problems/"+tt.problemID, nil)
 			if !tt.omitUserID {
 				req = withUserID(req, "user-1")
 			}
@@ -202,10 +217,6 @@ func TestProblemsController_GetProblemDetail(t *testing.T) {
 	}
 }
 
-// TestProblemsController_GetProblemDetail_ResponseShape locks in the detail
-// shape: a bare object (no result/total wrapper, unlike the list endpoint),
-// full problem content, and no status field — status is derived from
-// submissions, which come from a separate GET /submissions/{id} call.
 func TestProblemsController_GetProblemDetail_ResponseShape(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
@@ -213,9 +224,9 @@ func TestProblemsController_GetProblemDetail_ResponseShape(t *testing.T) {
 	title := "Two Sum"
 
 	mockInteractor := interactorMock.NewMockProblemsInteractorInputPort(ctrl)
-	mockInteractor.EXPECT().GetProblemDetails(gomock.Any(), "user-1", "problem-1").
+	mockInteractor.EXPECT().GetProblemDetails(gomock.Any(), "user-1", testProblemID).
 		Return(entities.Problems{
-			ProblemId:  "problem-1",
+			ProblemId:  testProblemID,
 			RawProblem: "raw text",
 			Title:      &title,
 			Status:     "Open", // must not leak into the response
@@ -225,7 +236,7 @@ func TestProblemsController_GetProblemDetail_ResponseShape(t *testing.T) {
 	controller := NewProblemsController(mockInteractor)
 	e.GET("/problems/:id", controller.GetProblemDetail)
 
-	req := httptest.NewRequest(http.MethodGet, "/problems/problem-1", nil)
+	req := httptest.NewRequest(http.MethodGet, "/problems/"+testProblemID, nil)
 	req = withUserID(req, "user-1")
 	rec := httptest.NewRecorder()
 	e.ServeHTTP(rec, req)
@@ -239,7 +250,7 @@ func TestProblemsController_GetProblemDetail_ResponseShape(t *testing.T) {
 
 	var detail response.ProblemDetail
 	assert.NoError(t, json.Unmarshal(rec.Body.Bytes(), &detail))
-	assert.Equal(t, "problem-1", detail.ProblemId)
+	assert.Equal(t, testProblemID, detail.ProblemId)
 	assert.Equal(t, "raw text", detail.RawProblem)
 	assert.Equal(t, &title, detail.Title)
 }

@@ -79,13 +79,18 @@ func (controller *ProblemsController) GetProblemDetail(c echo.Context) error {
 		return err
 	}
 
-	problemId := c.Param("id")
-	if problemId == "" {
-		err := response.NewBadRequest(errors.New("Failed to receive problem_id"))
+	var params entities.GetProblemDetailParams
+	if err := c.Bind(&params); err != nil {
+		err = response.NewBadRequest(err)
 		return err
 	}
 
-	problem, err := controller.problemsInteractor.GetProblemDetails(ctx, userId, problemId)
+	if err := validator.ValidateStruct(&params); err != nil {
+		err = response.NewBadRequest(err)
+		return err
+	}
+
+	problem, err := controller.problemsInteractor.GetProblemDetails(ctx, userId, params.ProblemId)
 	if err != nil {
 		return err
 	}
