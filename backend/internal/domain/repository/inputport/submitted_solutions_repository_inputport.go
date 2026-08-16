@@ -8,5 +8,6 @@ import (
 )
 
 type SubmittedSolutionsRepositoryInputPort interface {
-	GetSubmittedSolutions(ctx context.Context, userId string, problemId string) (problems []entities.SubmittedSolutions, err error)
+	GetSubmittedSolutions(ctx context.Context, userId string, problemId string) (solutions []entities.SubmittedSolutions, err error)
+	SubmitSolution(ctx context.Context, submittedSolution entities.SubmittedSolutions) (createdSolution entities.SubmittedSolutions, err error)
 }

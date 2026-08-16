@@ -55,3 +55,18 @@ func (mr *MockSubmittedSolutionsInteractorInputPortMockRecorder) GetSubmittedSol
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSubmittedSolutions", reflect.TypeOf((*MockSubmittedSolutionsInteractorInputPort)(nil).GetSubmittedSolutions), ctx, userId, problemId)
 }
+
+// SubmitSolution mocks base method.
+func (m *MockSubmittedSolutionsInteractorInputPort) SubmitSolution(ctx context.Context, userId, problemId string, submittedSolutionBody entities.SubmittedSolutionsBody) (entities.SubmittedSolutions, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SubmitSolution", ctx, userId, problemId, submittedSolutionBody)
+	ret0, _ := ret[0].(entities.SubmittedSolutions)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SubmitSolution indicates an expected call of SubmitSolution.
+func (mr *MockSubmittedSolutionsInteractorInputPortMockRecorder) SubmitSolution(ctx, userId, problemId, submittedSolutionBody any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubmitSolution", reflect.TypeOf((*MockSubmittedSolutionsInteractorInputPort)(nil).SubmitSolution), ctx, userId, problemId, submittedSolutionBody)
+}

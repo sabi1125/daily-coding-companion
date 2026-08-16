@@ -1,9 +1,20 @@
 package entities
 
-import "time"
+import (
+	"time"
+)
 
 type GetSubmittedSolutionsParam struct {
 	ProblemId string `param:"id" validate:"required,uuid"`
+}
+
+type SubmitSolutionsParam struct {
+	ProblemId string `param:"id" validate:"required,uuid"`
+}
+
+type SubmittedSolutionsBody struct {
+	Solution string `json:"solution" validate:"required,min=1"`
+	Status   string `json:"status" validate:"required,min=1,oneof=Solved Failed"`
 }
 
 type SubmittedSolutions struct {
@@ -11,5 +22,5 @@ type SubmittedSolutions struct {
 	ProblemId   string    `json:"-" gorm:"column:problem_id"`
 	Solution    string    `json:"solution" gorm:"column:solution"`
 	Status      string    `json:"status" gorm:"column:status"`
-	SubmittedAt time.Time `json:"submitted_at" gorm:"column:submitted_at"`
+	SubmittedAt time.Time `json:"submitted_at" gorm:"column:submitted_at;autoCreateTime"`
 }

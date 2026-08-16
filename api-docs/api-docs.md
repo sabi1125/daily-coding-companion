@@ -490,4 +490,5 @@ Insert's submissions.
 | 400 | Expected | When invalid id(problem id) | `{ "message" : "Bad Request" }` |
 | 400 | Expected | When invalid submission(empty submission) | `{ "message" : "Bad Request" }` |
 | 401 | Expected | Invalid/missing/expired session cookie | `{ "message" : "Unauthorized" }` |
+| 404 | Expected | When problem not found, or the problem_id belongs to another user | `{ "message" : "Problem not found" }` |
 | 500 | Operational | Inserting solutions in database failed | `{ "message" : "internal server error" }` |

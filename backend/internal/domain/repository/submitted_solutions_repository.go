@@ -38,3 +38,19 @@ func (repository *SubmittedSolutionsRepository) GetSubmittedSolutions(ctx contex
 
 	return
 }
+
+func (repository *SubmittedSolutionsRepository) SubmitSolution(ctx context.Context, submittedSolution entities.SubmittedSolutions) (createdSolution entities.SubmittedSolutions, err error) {
+	logger.Info("SubmittedSolutionRepository: SubmitSolution")
+	db := tx.ExtractTx(ctx)
+	if db == nil {
+		db = repository.db
+	}
+
+	createdSolution = submittedSolution
+	if err = db.Create(&createdSolution).Error; err != nil {
+		err = response.NewDatabaseError(err)
+		return
+	}
+
+	return
+}
