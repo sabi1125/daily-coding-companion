@@ -10,9 +10,6 @@ import (
 	"gorm.io/gorm"
 )
 
-// Connection opens a MySQL connection using the given DBConfig. Fatals on
-// failure — the app can't run without a DB, so fail loud at boot rather
-// than limp along with a nil *gorm.DB.
 func Connection(cfg *config.DBConfig) *gorm.DB {
 	dsn := fmt.Sprintf(
 		"%s:%s@tcp(%s:%s)/%s?parseTime=true&charset=utf8mb4&loc=Local",

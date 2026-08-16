@@ -15,9 +15,6 @@ type GetProblemParams struct {
 }
 
 type GetProblemDetailParams struct {
-	// problem_id is a CHAR(36) UUID (util.UUIDGenerator emits v7), so anything
-	// that isn't a UUID can't name a row — reject it as a 400 rather than
-	// spending a query on it.
 	ProblemId string `param:"id" validate:"required,uuid"`
 }
 
@@ -34,8 +31,6 @@ type Problems struct {
 	CreatedAt       time.Time `json:"created_at" gorm:"column:created_at;autoCreateTime"`
 	UpdatedAt       time.Time `json:"updated_at" gorm:"column:updated_at;autoUpdateTime"`
 
-	// Status is derived at read time from Submissions per state.md — not a
-	// problems column, so it's excluded from GORM's read/write.
 	Status      string               `json:"status" gorm:"-"`
 	Submissions []SubmittedSolutions `json:"-" gorm:"foreignKey:ProblemId;references:ProblemId"`
 }
