@@ -69,6 +69,21 @@ func (repository *OauthRepository) FindUserByUserId(ctx context.Context, userId 
 	return
 }
 
+func (repository *OauthRepository) GetAllUserIds(ctx context.Context) (userIds []string, err error) {
+	logger.Infof("OauthRepository: GetAllUserIds")
+	db := tx.ExtractTx(ctx)
+	if db == nil {
+		db = repository.db
+	}
+
+	if err = db.Model(&entities.OauthCredentials{}).Select("user_id").Find(&userIds).Error; err != nil {
+		err = response.NewDatabaseError(err)
+		return
+	}
+
+	return
+}
+
 func (repository *OauthRepository) CreateOauthCredentials(ctx context.Context, oauthCreds *entities.OauthCredentials) (err error) {
 	logger.Infof("OauthRepository: CreateOauthCredentials")
 	db := tx.ExtractTx(ctx)

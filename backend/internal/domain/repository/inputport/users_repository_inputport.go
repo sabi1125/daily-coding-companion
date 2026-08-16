@@ -9,5 +9,4 @@ import (
 
 type UsersRepositoryInputPort interface {
 	CreateUser(ctx context.Context, user *entities.Users) (err error)
-	GetAllUserIds(ctx context.Context) (userIds []string, err error)
 }

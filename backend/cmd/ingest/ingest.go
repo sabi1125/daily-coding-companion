@@ -57,8 +57,7 @@ func Ingest(db *gorm.DB) error {
 	now := time.Now().In(jst)
 	ingestDate := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, jst)
 
-	userRepository := repository.NewUsersRepository(db)
-	userIds, err := userRepository.GetAllUserIds(ctx)
+	userIds, err := r.oauthRepository.GetAllUserIds(ctx)
 	if err != nil {
 		return err
 	}
@@ -92,6 +91,12 @@ func (r *runner) ingestForUser(ctx context.Context, userId string, ingestDate ti
 	if err != nil {
 		return fmt.Errorf("getting oauth credentials: %w", err)
 	}
+	if userOauth == nil {
+		// Shouldn't happen — GetAllUserIds enumerates this same table, and
+		// auth creates users/oauth_credentials together in one transaction
+		// — but a nil here must never reach userOauth.RefreshToken below.
+		return errors.New("no oauth credentials found for user, despite being in the connected-users list")
+	}
 
 	// Only a dead refresh token is a real failure — the user has to
 	// reconnect Gmail themselves, so it's never papered over with a
@@ -102,10 +107,17 @@ func (r *runner) ingestForUser(ctx context.Context, userId string, ingestDate ti
 	// left empty.
 	tokenSource := r.oauthCfg.TokenSource(ctx, &oauth2.Token{RefreshToken: userOauth.RefreshToken})
 	rawBody := ""
-	if _, tokenErr := tokenSource.Token(); tokenErr != nil {
-		if err := r.handleTokenExchangeFailure(ctx, tokenErr, ingestUuid, userId, ingestDate); err != nil {
-			return err
+	_, tokenErr := tokenSource.Token()
+	if tokenErr != nil {
+		var receivedErr *oauth2.RetrieveError
+		if errors.As(tokenErr, &receivedErr) && receivedErr.ErrorCode == "invalid_grant" {
+			// The one real failure — always stop here, whether or not the
+			// failure row itself was written successfully. Must not fall
+			// through to Claude/the success write below (that would waste
+			// a Claude call and collide on ingestUuid's primary key).
+			return r.writeFailedIngestRun(ctx, ingestUuid, userId, ingestDate, "refresh token invalid")
 		}
+		logger.Warnf("problem exchanging refresh token for user %s, asking claude for a fallback problem: %v", userId, tokenErr)
 	} else if fetched, fetchErr := fetchTodaysEmail(ctx, tokenSource); fetchErr != nil {
 		logger.Infof("could not fetch today's email for user %s (%v), asking claude for a fallback problem", userId, fetchErr)
 	} else {
@@ -166,22 +178,6 @@ func (r *runner) hasAlreadyRun(ctx context.Context, userId string, ingestDate ti
 		return false, err
 	}
 	return len(ingest) > 0, nil
-}
-
-// handleTokenExchangeFailure is the one place ingestForUser can still return
-// a hard failure. A dead refresh token (invalid_grant) writes a failed
-// ingest_runs row and returns an error, aborting this user's run. Any other
-// exchange error isn't fatal — same non-fatal treatment as Gmail being
-// unreachable, so it's just logged here and the caller proceeds with an
-// empty rawBody.
-func (r *runner) handleTokenExchangeFailure(ctx context.Context, tokenErr error, ingestUuid, userId string, ingestDate time.Time) error {
-	var receivedErr *oauth2.RetrieveError
-	if errors.As(tokenErr, &receivedErr) && receivedErr.ErrorCode == "invalid_grant" {
-		return r.writeFailedIngestRun(ctx, ingestUuid, userId, ingestDate, "refresh token invalid")
-	}
-
-	logger.Warnf("problem exchanging refresh token for user %s, asking claude for a fallback problem: %v", userId, tokenErr)
-	return nil
 }
 
 func (r *runner) writeFailedIngestRun(ctx context.Context, ingestUuid, userId string, ingestDate time.Time, errMsg string) error {
