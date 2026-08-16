@@ -9,4 +9,5 @@ import (
 
 type SubmittedSolutionsInteractorInputPort interface {
 	GetSubmittedSolutions(ctx context.Context, userId string, problemId string) (problems []entities.SubmittedSolutions, err error)
+	SubmitSolution(ctx context.Context, userId string, problemId string, submittedSolutionBody entities.SubmittedSolutionsBody) (problems entities.SubmittedSolutions, err error)
 }

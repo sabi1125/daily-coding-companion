@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -170,4 +171,170 @@ func TestSubmittedSolutionsController_GetUserSubmissions_EmptyResult(t *testing.
 	assert.Equal(t, 0, body.Total)
 	assert.Empty(t, body.Result)
 	assert.NotNil(t, body.Result, "result must serialize as [] not null")
+}
+
+func TestSubmittedSolutionsController_SubmitSolutions(t *testing.T) {
+	tests := []struct {
+		name           string
+		problemID      string
+		body           string
+		omitUserID     bool
+		mockSetup      func(m *interactorMock.MockSubmittedSolutionsInteractorInputPort)
+		expectedStatus int
+	}{
+		{
+			name:      "success",
+			problemID: testSubmissionProblemID,
+			body:      `{"solution":"def two_sum(): pass","status":"Solved"}`,
+			mockSetup: func(m *interactorMock.MockSubmittedSolutionsInteractorInputPort) {
+				m.EXPECT().SubmitSolution(gomock.Any(), "user-1", testSubmissionProblemID, entities.SubmittedSolutionsBody{
+					Solution: "def two_sum(): pass",
+					Status:   "Solved",
+				}).Return(entities.SubmittedSolutions{SolutionId: "s-1", ProblemId: testSubmissionProblemID}, nil)
+			},
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name:           "missing user_id — 401",
+			problemID:      testSubmissionProblemID,
+			body:           `{"solution":"code","status":"Solved"}`,
+			omitUserID:     true,
+			mockSetup:      func(m *interactorMock.MockSubmittedSolutionsInteractorInputPort) {},
+			expectedStatus: http.StatusUnauthorized,
+		},
+		{
+			name:           "id isn't a uuid — 400",
+			problemID:      "problem-1",
+			body:           `{"solution":"code","status":"Solved"}`,
+			mockSetup:      func(m *interactorMock.MockSubmittedSolutionsInteractorInputPort) {},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name:           "uuid-shaped but malformed id — 400",
+			problemID:      "c39a04db-e00b-426b-9e4a-9b8e2cb29a1",
+			body:           `{"solution":"code","status":"Solved"}`,
+			mockSetup:      func(m *interactorMock.MockSubmittedSolutionsInteractorInputPort) {},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name:           "empty solution — 400",
+			problemID:      testSubmissionProblemID,
+			body:           `{"solution":"","status":"Solved"}`,
+			mockSetup:      func(m *interactorMock.MockSubmittedSolutionsInteractorInputPort) {},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name:           "status not Solved/Failed — 400",
+			problemID:      testSubmissionProblemID,
+			body:           `{"solution":"code","status":"Open"}`,
+			mockSetup:      func(m *interactorMock.MockSubmittedSolutionsInteractorInputPort) {},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name:           "malformed json body — 400",
+			problemID:      testSubmissionProblemID,
+			body:           `{"solution":`,
+			mockSetup:      func(m *interactorMock.MockSubmittedSolutionsInteractorInputPort) {},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name:      "problem not found or not owned — 404",
+			problemID: testSubmissionProblemID,
+			body:      `{"solution":"code","status":"Solved"}`,
+			mockSetup: func(m *interactorMock.MockSubmittedSolutionsInteractorInputPort) {
+				m.EXPECT().SubmitSolution(gomock.Any(), "user-1", testSubmissionProblemID, entities.SubmittedSolutionsBody{
+					Solution: "code",
+					Status:   "Solved",
+				}).Return(entities.SubmittedSolutions{}, response.NewProblemNotFound(errors.New("not found")))
+			},
+			expectedStatus: http.StatusNotFound,
+		},
+		{
+			name:      "interactor error propagates",
+			problemID: testSubmissionProblemID,
+			body:      `{"solution":"code","status":"Solved"}`,
+			mockSetup: func(m *interactorMock.MockSubmittedSolutionsInteractorInputPort) {
+				m.EXPECT().SubmitSolution(gomock.Any(), "user-1", testSubmissionProblemID, entities.SubmittedSolutionsBody{
+					Solution: "code",
+					Status:   "Solved",
+				}).Return(entities.SubmittedSolutions{}, response.NewDatabaseError(errors.New("db down")))
+			},
+			expectedStatus: http.StatusInternalServerError,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			mockInteractor := interactorMock.NewMockSubmittedSolutionsInteractorInputPort(ctrl)
+			tt.mockSetup(mockInteractor)
+
+			e := newTestEcho()
+			controller := NewSubmittedSolutionsController(mockInteractor)
+			e.POST("/submissions/:id", controller.SubmitSolutions)
+
+			req := httptest.NewRequest(http.MethodPost, "/submissions/"+tt.problemID, bytes.NewBufferString(tt.body))
+			req.Header.Set("Content-Type", "application/json")
+			if !tt.omitUserID {
+				req = withUserID(req, "user-1")
+			}
+			rec := httptest.NewRecorder()
+			e.ServeHTTP(rec, req)
+
+			assert.Equal(t, tt.expectedStatus, rec.Code)
+		})
+	}
+}
+
+// TestSubmittedSolutionsController_SubmitSolutions_ResponseShape locks in
+// that the 200 response is a bare object (unlike GetUserSubmissions' list,
+// there's no result/total wrapper) and that problem_id is present —
+// entities.SubmittedSolutions tags ProblemId json:"-" so the controller must
+// map through response.Submission, same as the GET path.
+func TestSubmittedSolutionsController_SubmitSolutions_ResponseShape(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	submittedAt := time.Date(2026, 8, 10, 14, 30, 0, 0, time.UTC)
+
+	mockInteractor := interactorMock.NewMockSubmittedSolutionsInteractorInputPort(ctrl)
+	mockInteractor.EXPECT().SubmitSolution(gomock.Any(), "user-1", testSubmissionProblemID, entities.SubmittedSolutionsBody{
+		Solution: "def two_sum(): pass",
+		Status:   "Solved",
+	}).Return(entities.SubmittedSolutions{
+		SolutionId:  "s-1",
+		ProblemId:   testSubmissionProblemID,
+		Solution:    "def two_sum(): pass",
+		Status:      "Solved",
+		SubmittedAt: submittedAt,
+	}, nil)
+
+	e := newTestEcho()
+	controller := NewSubmittedSolutionsController(mockInteractor)
+	e.POST("/submissions/:id", controller.SubmitSolutions)
+
+	req := httptest.NewRequest(http.MethodPost, "/submissions/"+testSubmissionProblemID,
+		bytes.NewBufferString(`{"solution":"def two_sum(): pass","status":"Solved"}`))
+	req.Header.Set("Content-Type", "application/json")
+	req = withUserID(req, "user-1")
+	rec := httptest.NewRecorder()
+	e.ServeHTTP(rec, req)
+
+	assert.Equal(t, http.StatusOK, rec.Code)
+
+	var raw map[string]any
+	assert.NoError(t, json.Unmarshal(rec.Body.Bytes(), &raw))
+	assert.NotContains(t, raw, "result", "create response must be a bare object, not wrapped")
+
+	var body response.Submission
+	assert.NoError(t, json.Unmarshal(rec.Body.Bytes(), &body))
+	assert.Equal(t, "s-1", body.SolutionId)
+	assert.Equal(t, testSubmissionProblemID, body.ProblemId, "problem_id must survive into the response")
+	assert.Equal(t, "def two_sum(): pass", body.Solution)
+	assert.Equal(t, "Solved", body.Status)
+	assert.True(t, submittedAt.Equal(body.SubmittedAt))
+
+	assert.Contains(t, rec.Body.String(), `"problem_id"`, "problem_id key must actually be on the wire")
 }

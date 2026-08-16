@@ -3,8 +3,11 @@ package repository
 import (
 	"context"
 	"errors"
+	"regexp"
 	"testing"
 	"time"
+
+	"backend/internal/domain/entities"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/stretchr/testify/assert"
@@ -102,6 +105,71 @@ func TestSubmittedSolutionsRepository_GetSubmittedSolutions(t *testing.T) {
 				gotIds[i] = s.SolutionId
 			}
 			assert.ElementsMatch(t, tt.wantIds, gotIds)
+			assert.NoError(t, mock.ExpectationsWereMet())
+		})
+	}
+}
+
+func TestSubmittedSolutionsRepository_SubmitSolution(t *testing.T) {
+	input := entities.SubmittedSolutions{
+		SolutionId: "s-1",
+		ProblemId:  "problem-1",
+		Solution:   "def two_sum(): pass",
+		Status:     "Solved",
+	}
+
+	tests := []struct {
+		name      string
+		wantErr   bool
+		setupMock func(mock sqlmock.Sqlmock)
+	}{
+		{
+			name: "inserts successfully and returns the created row",
+			setupMock: func(mock sqlmock.Sqlmock) {
+				mock.ExpectBegin()
+				mock.ExpectExec(regexp.QuoteMeta("INSERT INTO `submitted_solutions`")).
+					WithArgs("s-1", "problem-1", "def two_sum(): pass", "Solved", sqlmock.AnyArg()).
+					WillReturnResult(sqlmock.NewResult(1, 1))
+				mock.ExpectCommit()
+			},
+		},
+		{
+			name:    "returns a database error when insert fails",
+			wantErr: true,
+			setupMock: func(mock sqlmock.Sqlmock) {
+				mock.ExpectBegin()
+				mock.ExpectExec(regexp.QuoteMeta("INSERT INTO `submitted_solutions`")).
+					WithArgs("s-1", "problem-1", "def two_sum(): pass", "Solved", sqlmock.AnyArg()).
+					WillReturnError(errors.New("db connection lost"))
+				mock.ExpectRollback()
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			db, mock, cleanup := setupMockDB(t)
+			defer cleanup()
+
+			tt.setupMock(mock)
+
+			repo := NewSubmittedSolutionsRepository(db)
+			created, err := repo.SubmitSolution(context.Background(), input)
+
+			if tt.wantErr {
+				assert.Error(t, err)
+				assert.NoError(t, mock.ExpectationsWereMet())
+				return
+			}
+
+			assert.NoError(t, err)
+			// created must actually carry the row back — SubmitSolution had
+			// a bug where the named return was never assigned and always
+			// came back zero-valued despite a successful insert.
+			assert.Equal(t, input.SolutionId, created.SolutionId)
+			assert.Equal(t, input.ProblemId, created.ProblemId)
+			assert.Equal(t, input.Solution, created.Solution)
+			assert.Equal(t, input.Status, created.Status)
 			assert.NoError(t, mock.ExpectationsWereMet())
 		})
 	}
