@@ -41,6 +41,21 @@ func (m *MockProblemsRepositoryInputPort) EXPECT() *MockProblemsRepositoryInputP
 	return m.recorder
 }
 
+// GetProblemDetails mocks base method.
+func (m *MockProblemsRepositoryInputPort) GetProblemDetails(ctx context.Context, userId, problemId string) (entities.Problems, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetProblemDetails", ctx, userId, problemId)
+	ret0, _ := ret[0].(entities.Problems)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetProblemDetails indicates an expected call of GetProblemDetails.
+func (mr *MockProblemsRepositoryInputPortMockRecorder) GetProblemDetails(ctx, userId, problemId any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProblemDetails", reflect.TypeOf((*MockProblemsRepositoryInputPort)(nil).GetProblemDetails), ctx, userId, problemId)
+}
+
 // GetProblems mocks base method.
 func (m *MockProblemsRepositoryInputPort) GetProblems(ctx context.Context, userId, status string) ([]entities.Problems, error) {
 	m.ctrl.T.Helper()

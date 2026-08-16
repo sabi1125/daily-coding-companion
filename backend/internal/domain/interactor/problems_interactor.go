@@ -27,3 +27,14 @@ func (interactor *ProblemsInteractor) GetProblems(ctx context.Context, userId st
 	}
 	return
 }
+
+func (interactor *ProblemsInteractor) GetProblemDetails(ctx context.Context, userId string, problemId string) (problem entities.Problems, err error) {
+	logger.Info("ProblemsInteractor: GetProblemDetails")
+
+	problem, err = interactor.problemsRepository.GetProblemDetails(ctx, userId, problemId)
+	if err != nil {
+		return
+	}
+
+	return
+}

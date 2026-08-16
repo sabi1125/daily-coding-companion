@@ -3,7 +3,6 @@ package controller
 import (
 	"errors"
 	"net/http"
-	"time"
 
 	"backend/internal/domain/entities"
 	"backend/internal/domain/interactor/inputport"
@@ -17,22 +16,6 @@ import (
 
 type ProblemsController struct {
 	problemsInteractor inputport.ProblemsInteractorInputPort
-}
-
-// problemSummary is the History-list shape — only what the list view
-// renders. Full problem content (raw_problem, problem_text, algorithm_tag,
-// difficulty, ai_help) is what GET /problems/{id} is for.
-type problemSummary struct {
-	ProblemId       string    `json:"problem_id"`
-	Title           *string   `json:"title"`
-	Status          string    `json:"status"`
-	NeedsReviewFlag bool      `json:"needs_review_flag"`
-	CreatedAt       time.Time `json:"created_at"`
-}
-
-type getProblemsResponse struct {
-	Result []problemSummary `json:"result"`
-	Total  int              `json:"total"`
 }
 
 func NewProblemsController(problemsInteractor inputport.ProblemsInteractorInputPort) *ProblemsController {
@@ -72,9 +55,9 @@ func (controller *ProblemsController) GetProblems(c echo.Context) error {
 		return err
 	}
 
-	result := make([]problemSummary, len(problems))
+	result := make([]response.ProblemSummary, len(problems))
 	for i, problem := range problems {
-		result[i] = problemSummary{
+		result[i] = response.ProblemSummary{
 			ProblemId:       problem.ProblemId,
 			Title:           problem.Title,
 			Status:          problem.Status,
@@ -83,5 +66,40 @@ func (controller *ProblemsController) GetProblems(c echo.Context) error {
 		}
 	}
 
-	return c.JSON(http.StatusOK, getProblemsResponse{Result: result, Total: len(result)})
+	return c.JSON(http.StatusOK, response.GetProblemsResponse{Result: result, Total: len(result)})
+}
+
+func (controller *ProblemsController) GetProblemDetail(c echo.Context) error {
+	logger.Info("ProblemsController: GetProblemDetails")
+
+	ctx := c.Request().Context()
+	userId := middleware.UserIDFromContext(ctx)
+	if userId == "" {
+		err := response.NewUnauthorized(errors.New("invalid user"))
+		return err
+	}
+
+	problemId := c.Param("id")
+	if problemId == "" {
+		err := response.NewBadRequest(errors.New("Failed to receive problem_id"))
+		return err
+	}
+
+	problem, err := controller.problemsInteractor.GetProblemDetails(ctx, userId, problemId)
+	if err != nil {
+		return err
+	}
+
+	return c.JSON(http.StatusOK, response.ProblemDetail{
+		ProblemId:       problem.ProblemId,
+		RawProblem:      problem.RawProblem,
+		Title:           problem.Title,
+		ProblemText:     problem.ProblemText,
+		AlgorithmTag:    problem.AlgorithmTag,
+		Difficulty:      problem.Difficulty,
+		AiHelp:          problem.AiHelp,
+		NeedsReviewFlag: problem.NeedsReviewFlag,
+		CreatedAt:       problem.CreatedAt,
+		UpdatedAt:       problem.UpdatedAt,
+	})
 }

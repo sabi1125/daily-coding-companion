@@ -71,3 +71,53 @@ func TestProblemsInteractor_GetProblems(t *testing.T) {
 		})
 	}
 }
+
+func TestProblemsInteractor_GetProblemDetails(t *testing.T) {
+	ctx := context.Background()
+	testUserId := "test-user-id"
+	testProblemId := "test-problem-id"
+	testProblem := entities.Problems{ProblemId: testProblemId}
+	errNotFound := response.NewProblemNotFound(errors.New("not found"))
+
+	tests := []struct {
+		name        string
+		prepareFunc func(mpr *inputportMock.MockProblemsRepositoryInputPort)
+		wantedError error
+	}{
+		{
+			name: "success",
+			prepareFunc: func(mpr *inputportMock.MockProblemsRepositoryInputPort) {
+				mpr.EXPECT().GetProblemDetails(gomock.Any(), testUserId, testProblemId).Return(testProblem, nil)
+			},
+		},
+		{
+			name: "problem not found",
+			prepareFunc: func(mpr *inputportMock.MockProblemsRepositoryInputPort) {
+				mpr.EXPECT().GetProblemDetails(gomock.Any(), testUserId, testProblemId).Return(entities.Problems{}, errNotFound)
+			},
+			wantedError: errNotFound,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			mockProblems := inputportMock.NewMockProblemsRepositoryInputPort(ctrl)
+			tt.prepareFunc(mockProblems)
+
+			interactor := NewProblemsInteractor(mockProblems)
+
+			problem, err := interactor.GetProblemDetails(ctx, testUserId, testProblemId)
+
+			if tt.wantedError != nil {
+				assert.EqualError(t, err, tt.wantedError.Error())
+				return
+			}
+
+			assert.NoError(t, err)
+			assert.Equal(t, testProblem, problem)
+		})
+	}
+}

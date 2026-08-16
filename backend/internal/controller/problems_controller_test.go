@@ -127,7 +127,7 @@ func TestProblemsController_GetProblems_ResponseShape(t *testing.T) {
 	assert.Equal(t, http.StatusOK, rec.Code)
 	assert.NotContains(t, rec.Body.String(), rawProblem, "full problem content must not leak into the list response")
 
-	var body getProblemsResponse
+	var body response.GetProblemsResponse
 	assert.NoError(t, json.Unmarshal(rec.Body.Bytes(), &body))
 	assert.Equal(t, 1, body.Total)
 	if assert.Len(t, body.Result, 1) {
@@ -137,4 +137,109 @@ func TestProblemsController_GetProblems_ResponseShape(t *testing.T) {
 		assert.True(t, body.Result[0].NeedsReviewFlag)
 		assert.True(t, createdAt.Equal(body.Result[0].CreatedAt))
 	}
+}
+
+func TestProblemsController_GetProblemDetail(t *testing.T) {
+	tests := []struct {
+		name           string
+		omitUserID     bool
+		mockSetup      func(m *interactorMock.MockProblemsInteractorInputPort)
+		expectedStatus int
+	}{
+		{
+			name: "success",
+			mockSetup: func(m *interactorMock.MockProblemsInteractorInputPort) {
+				m.EXPECT().GetProblemDetails(gomock.Any(), "user-1", "problem-1").
+					Return(entities.Problems{ProblemId: "problem-1", RawProblem: "raw text"}, nil)
+			},
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name:           "missing user_id — 401",
+			omitUserID:     true,
+			mockSetup:      func(m *interactorMock.MockProblemsInteractorInputPort) {},
+			expectedStatus: http.StatusUnauthorized,
+		},
+		{
+			name: "problem not found — 404",
+			mockSetup: func(m *interactorMock.MockProblemsInteractorInputPort) {
+				m.EXPECT().GetProblemDetails(gomock.Any(), "user-1", "problem-1").
+					Return(entities.Problems{}, response.NewProblemNotFound(errors.New("not found")))
+			},
+			expectedStatus: http.StatusNotFound,
+		},
+		{
+			name: "interactor error propagates",
+			mockSetup: func(m *interactorMock.MockProblemsInteractorInputPort) {
+				m.EXPECT().GetProblemDetails(gomock.Any(), "user-1", "problem-1").
+					Return(entities.Problems{}, response.NewDatabaseError(errors.New("db down")))
+			},
+			expectedStatus: http.StatusInternalServerError,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			mockInteractor := interactorMock.NewMockProblemsInteractorInputPort(ctrl)
+			tt.mockSetup(mockInteractor)
+
+			e := newTestEcho()
+			controller := NewProblemsController(mockInteractor)
+			e.GET("/problems/:id", controller.GetProblemDetail)
+
+			req := httptest.NewRequest(http.MethodGet, "/problems/problem-1", nil)
+			if !tt.omitUserID {
+				req = withUserID(req, "user-1")
+			}
+			rec := httptest.NewRecorder()
+			e.ServeHTTP(rec, req)
+
+			assert.Equal(t, tt.expectedStatus, rec.Code)
+		})
+	}
+}
+
+// TestProblemsController_GetProblemDetail_ResponseShape locks in the detail
+// shape: a bare object (no result/total wrapper, unlike the list endpoint),
+// full problem content, and no status field — status is derived from
+// submissions, which come from a separate GET /submissions/{id} call.
+func TestProblemsController_GetProblemDetail_ResponseShape(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	title := "Two Sum"
+
+	mockInteractor := interactorMock.NewMockProblemsInteractorInputPort(ctrl)
+	mockInteractor.EXPECT().GetProblemDetails(gomock.Any(), "user-1", "problem-1").
+		Return(entities.Problems{
+			ProblemId:  "problem-1",
+			RawProblem: "raw text",
+			Title:      &title,
+			Status:     "Open", // must not leak into the response
+		}, nil)
+
+	e := newTestEcho()
+	controller := NewProblemsController(mockInteractor)
+	e.GET("/problems/:id", controller.GetProblemDetail)
+
+	req := httptest.NewRequest(http.MethodGet, "/problems/problem-1", nil)
+	req = withUserID(req, "user-1")
+	rec := httptest.NewRecorder()
+	e.ServeHTTP(rec, req)
+
+	assert.Equal(t, http.StatusOK, rec.Code)
+
+	var body map[string]any
+	assert.NoError(t, json.Unmarshal(rec.Body.Bytes(), &body))
+	assert.NotContains(t, body, "result", "detail response must be a bare object, not wrapped")
+	assert.NotContains(t, body, "status", "status is not part of this endpoint's response")
+
+	var detail response.ProblemDetail
+	assert.NoError(t, json.Unmarshal(rec.Body.Bytes(), &detail))
+	assert.Equal(t, "problem-1", detail.ProblemId)
+	assert.Equal(t, "raw text", detail.RawProblem)
+	assert.Equal(t, &title, detail.Title)
 }
