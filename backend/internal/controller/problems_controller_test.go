@@ -90,10 +90,6 @@ func TestProblemsController_GetProblems(t *testing.T) {
 	}
 }
 
-// TestProblemsController_GetProblems_ResponseShape locks in the History
-// list shape: {result, total}, with only what the list view renders
-// (problem_id/title/status/needs_review_flag/created_at) — full problem
-// content belongs to GET /problems/{id}, not this endpoint.
 func TestProblemsController_GetProblems_ResponseShape(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
@@ -127,7 +123,7 @@ func TestProblemsController_GetProblems_ResponseShape(t *testing.T) {
 	assert.Equal(t, http.StatusOK, rec.Code)
 	assert.NotContains(t, rec.Body.String(), rawProblem, "full problem content must not leak into the list response")
 
-	var body getProblemsResponse
+	var body response.GetProblemsResponse
 	assert.NoError(t, json.Unmarshal(rec.Body.Bytes(), &body))
 	assert.Equal(t, 1, body.Total)
 	if assert.Len(t, body.Result, 1) {
@@ -137,4 +133,124 @@ func TestProblemsController_GetProblems_ResponseShape(t *testing.T) {
 		assert.True(t, body.Result[0].NeedsReviewFlag)
 		assert.True(t, createdAt.Equal(body.Result[0].CreatedAt))
 	}
+}
+
+const testProblemID = "c39a04db-e00b-426b-9e4a-9b8e2cb29a10"
+
+func TestProblemsController_GetProblemDetail(t *testing.T) {
+	tests := []struct {
+		name           string
+		problemID      string
+		omitUserID     bool
+		mockSetup      func(m *interactorMock.MockProblemsInteractorInputPort)
+		expectedStatus int
+	}{
+		{
+			name:      "success",
+			problemID: testProblemID,
+			mockSetup: func(m *interactorMock.MockProblemsInteractorInputPort) {
+				m.EXPECT().GetProblemDetails(gomock.Any(), "user-1", testProblemID).
+					Return(entities.Problems{ProblemId: testProblemID, RawProblem: "raw text"}, nil)
+			},
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name:           "missing user_id — 401",
+			problemID:      testProblemID,
+			omitUserID:     true,
+			mockSetup:      func(m *interactorMock.MockProblemsInteractorInputPort) {},
+			expectedStatus: http.StatusUnauthorized,
+		},
+		{
+			name:           "id isn't a uuid — 400",
+			problemID:      "problem-1",
+			mockSetup:      func(m *interactorMock.MockProblemsInteractorInputPort) {},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name:           "uuid-shaped but malformed id — 400",
+			problemID:      "c39a04db-e00b-426b-9e4a-9b8e2cb29a1",
+			mockSetup:      func(m *interactorMock.MockProblemsInteractorInputPort) {},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name:      "problem not found — 404",
+			problemID: testProblemID,
+			mockSetup: func(m *interactorMock.MockProblemsInteractorInputPort) {
+				m.EXPECT().GetProblemDetails(gomock.Any(), "user-1", testProblemID).
+					Return(entities.Problems{}, response.NewProblemNotFound(errors.New("not found")))
+			},
+			expectedStatus: http.StatusNotFound,
+		},
+		{
+			name:      "interactor error propagates",
+			problemID: testProblemID,
+			mockSetup: func(m *interactorMock.MockProblemsInteractorInputPort) {
+				m.EXPECT().GetProblemDetails(gomock.Any(), "user-1", testProblemID).
+					Return(entities.Problems{}, response.NewDatabaseError(errors.New("db down")))
+			},
+			expectedStatus: http.StatusInternalServerError,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			mockInteractor := interactorMock.NewMockProblemsInteractorInputPort(ctrl)
+			tt.mockSetup(mockInteractor)
+
+			e := newTestEcho()
+			controller := NewProblemsController(mockInteractor)
+			e.GET("/problems/:id", controller.GetProblemDetail)
+
+			req := httptest.NewRequest(http.MethodGet, "/problems/"+tt.problemID, nil)
+			if !tt.omitUserID {
+				req = withUserID(req, "user-1")
+			}
+			rec := httptest.NewRecorder()
+			e.ServeHTTP(rec, req)
+
+			assert.Equal(t, tt.expectedStatus, rec.Code)
+		})
+	}
+}
+
+func TestProblemsController_GetProblemDetail_ResponseShape(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	title := "Two Sum"
+
+	mockInteractor := interactorMock.NewMockProblemsInteractorInputPort(ctrl)
+	mockInteractor.EXPECT().GetProblemDetails(gomock.Any(), "user-1", testProblemID).
+		Return(entities.Problems{
+			ProblemId:  testProblemID,
+			RawProblem: "raw text",
+			Title:      &title,
+			Status:     "Open", // must not leak into the response
+		}, nil)
+
+	e := newTestEcho()
+	controller := NewProblemsController(mockInteractor)
+	e.GET("/problems/:id", controller.GetProblemDetail)
+
+	req := httptest.NewRequest(http.MethodGet, "/problems/"+testProblemID, nil)
+	req = withUserID(req, "user-1")
+	rec := httptest.NewRecorder()
+	e.ServeHTTP(rec, req)
+
+	assert.Equal(t, http.StatusOK, rec.Code)
+
+	var body map[string]any
+	assert.NoError(t, json.Unmarshal(rec.Body.Bytes(), &body))
+	assert.NotContains(t, body, "result", "detail response must be a bare object, not wrapped")
+	assert.NotContains(t, body, "status", "status is not part of this endpoint's response")
+
+	var detail response.ProblemDetail
+	assert.NoError(t, json.Unmarshal(rec.Body.Bytes(), &detail))
+	assert.Equal(t, testProblemID, detail.ProblemId)
+	assert.Equal(t, "raw text", detail.RawProblem)
+	assert.Equal(t, &title, detail.Title)
 }

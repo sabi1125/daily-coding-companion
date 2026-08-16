@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"errors"
 
 	"backend/internal/domain/entities"
 	logger "backend/internal/log"
@@ -65,4 +66,20 @@ func deriveProblemStatus(submissions []entities.SubmittedSolutions) string {
 	}
 
 	return string(entities.ProblemFailed)
+}
+
+func (repository *ProblemsRepository) GetProblemDetails(ctx context.Context, userId string, problemId string) (problem entities.Problems, err error) {
+	db := tx.ExtractTx(ctx)
+	if db == nil {
+		db = repository.db
+	}
+	if err = db.Where("user_id = ? and problem_id = ?", userId, problemId).Take(&problem).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			err = response.NewProblemNotFound(err)
+			return
+		}
+		err = response.NewDatabaseError(err)
+		return
+	}
+	return
 }

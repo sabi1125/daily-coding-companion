@@ -97,4 +97,5 @@ func RegisteredProblemsRoutes(
 	controller := controller.NewProblemsController(interactor)
 
 	problems.GET("", controller.GetProblems)
+	problems.GET("/:id", controller.GetProblemDetail)
 }

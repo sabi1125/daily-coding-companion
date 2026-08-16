@@ -41,6 +41,21 @@ func (m *MockProblemsInteractorInputPort) EXPECT() *MockProblemsInteractorInputP
 	return m.recorder
 }
 
+// GetProblemDetails mocks base method.
+func (m *MockProblemsInteractorInputPort) GetProblemDetails(ctx context.Context, userId, problemId string) (entities.Problems, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetProblemDetails", ctx, userId, problemId)
+	ret0, _ := ret[0].(entities.Problems)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetProblemDetails indicates an expected call of GetProblemDetails.
+func (mr *MockProblemsInteractorInputPortMockRecorder) GetProblemDetails(ctx, userId, problemId any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProblemDetails", reflect.TypeOf((*MockProblemsInteractorInputPort)(nil).GetProblemDetails), ctx, userId, problemId)
+}
+
 // GetProblems mocks base method.
 func (m *MockProblemsInteractorInputPort) GetProblems(ctx context.Context, userId string, status entities.ProblemStatus) ([]entities.Problems, error) {
 	m.ctrl.T.Helper()

@@ -3,8 +3,11 @@ package repository
 import (
 	"context"
 	"errors"
+	"net/http"
 	"testing"
 	"time"
+
+	"backend/internal/response"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/stretchr/testify/assert"
@@ -133,6 +136,76 @@ func TestProblemsRepository_GetProblems(t *testing.T) {
 				if want, ok := tt.wantStatus[p.ProblemId]; ok {
 					assert.Equal(t, want, p.Status)
 				}
+			}
+			assert.NoError(t, mock.ExpectationsWereMet())
+		})
+	}
+}
+
+func TestProblemsRepository_GetProblemDetails(t *testing.T) {
+	tests := []struct {
+		name      string
+		userId    string
+		problemId string
+		wantErr   bool
+		wantCode  int
+		setupMock func(mock sqlmock.Sqlmock)
+	}{
+		{
+			name:      "returns the matching problem",
+			userId:    "user-1",
+			problemId: "problem-1",
+			setupMock: func(mock sqlmock.Sqlmock) {
+				mock.ExpectQuery("SELECT \\* FROM .problems.").
+					WithArgs("user-1", "problem-1", 1).
+					WillReturnRows(sqlmock.NewRows([]string{"problem_id", "user_id", "title"}).
+						AddRow("problem-1", "user-1", "Two Sum"))
+			},
+		},
+		{
+			name:      "returns 404 when no matching problem",
+			userId:    "user-1",
+			problemId: "unknown-problem",
+			wantErr:   true,
+			wantCode:  http.StatusNotFound,
+			setupMock: func(mock sqlmock.Sqlmock) {
+				mock.ExpectQuery("SELECT \\* FROM .problems.").
+					WithArgs("user-1", "unknown-problem", 1).
+					WillReturnRows(sqlmock.NewRows([]string{"problem_id", "user_id", "title"}))
+			},
+		},
+		{
+			name:      "returns error on unexpected db failure",
+			userId:    "user-1",
+			problemId: "problem-1",
+			wantErr:   true,
+			wantCode:  http.StatusInternalServerError,
+			setupMock: func(mock sqlmock.Sqlmock) {
+				mock.ExpectQuery("SELECT \\* FROM .problems.").
+					WithArgs("user-1", "problem-1", 1).
+					WillReturnError(errors.New("db connection lost"))
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			db, mock, cleanup := setupMockDB(t)
+			defer cleanup()
+
+			tt.setupMock(mock)
+
+			repo := NewProblemsRepository(db)
+			problem, err := repo.GetProblemDetails(context.Background(), tt.userId, tt.problemId)
+
+			if tt.wantErr {
+				var appErr *response.AppError
+				if assert.ErrorAs(t, err, &appErr) {
+					assert.Equal(t, tt.wantCode, appErr.Status.Code)
+				}
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.problemId, problem.ProblemId)
 			}
 			assert.NoError(t, mock.ExpectationsWereMet())
 		})

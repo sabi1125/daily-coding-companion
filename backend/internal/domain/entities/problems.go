@@ -14,6 +14,13 @@ type GetProblemParams struct {
 	Status string `query:"status" validate:"omitempty,oneof=Open Failed Solved"`
 }
 
+type GetProblemDetailParams struct {
+	// problem_id is a CHAR(36) UUID (util.UUIDGenerator emits v7), so anything
+	// that isn't a UUID can't name a row — reject it as a 400 rather than
+	// spending a query on it.
+	ProblemId string `param:"id" validate:"required,uuid"`
+}
+
 type Problems struct {
 	ProblemId       string    `json:"problem_id" gorm:"column:problem_id"`
 	UserId          string    `json:"-" gorm:"column:user_id"`
