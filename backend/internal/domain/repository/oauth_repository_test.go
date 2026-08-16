@@ -73,6 +73,66 @@ func TestOauthRepository_FindUserBySub(t *testing.T) {
 	}
 }
 
+func TestOauthRepository_FindUserByUserId(t *testing.T) {
+	tests := []struct {
+		name      string
+		userId    string
+		wantErr   bool
+		setupMock func(mock sqlmock.Sqlmock)
+	}{
+		{
+			name:   "returns existing record",
+			userId: "user-1",
+			setupMock: func(mock sqlmock.Sqlmock) {
+				mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `oauth_credentials` WHERE user_id = ?")).
+					WithArgs("user-1", 1).
+					WillReturnRows(sqlmock.NewRows([]string{"oauth_id", "user_id", "refresh_token"}).
+						AddRow("google-sub-123", "user-1", "refresh-token-value"))
+			},
+		},
+		{
+			name:   "returns nil, nil when no record found",
+			userId: "unknown-user",
+			setupMock: func(mock sqlmock.Sqlmock) {
+				mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `oauth_credentials` WHERE user_id = ?")).
+					WithArgs("unknown-user", 1).
+					WillReturnRows(sqlmock.NewRows([]string{"oauth_id", "user_id", "refresh_token"}))
+			},
+		},
+		{
+			name:    "returns error on unexpected db failure",
+			userId:  "user-1",
+			wantErr: true,
+			setupMock: func(mock sqlmock.Sqlmock) {
+				mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `oauth_credentials` WHERE user_id = ?")).
+					WithArgs("user-1", 1).
+					WillReturnError(errors.New("db connection lost"))
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			db, mock, cleanup := setupMockDB(t)
+			defer cleanup()
+
+			tt.setupMock(mock)
+
+			repo := NewOauthRepository(db)
+			got, err := repo.FindUserByUserId(context.Background(), tt.userId)
+
+			if tt.wantErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+
+			_ = got
+			assert.NoError(t, mock.ExpectationsWereMet())
+		})
+	}
+}
+
 func TestOauthRepository_CreateOauthCredentials(t *testing.T) {
 	tests := []struct {
 		name      string

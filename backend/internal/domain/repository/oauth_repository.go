@@ -46,6 +46,29 @@ func (repository *OauthRepository) FindUserBySub(ctx context.Context, sub string
 	return
 }
 
+func (repository *OauthRepository) FindUserByUserId(ctx context.Context, userId string) (oauthCredentials *entities.OauthCredentials, err error) {
+	logger.Infof("OauthRepository: FindUserByUserId")
+
+	db := tx.ExtractTx(ctx)
+	if db == nil {
+		db = repository.db
+	}
+
+	var creds entities.OauthCredentials
+	if err = db.Where("user_id = ?", userId).Take(&creds).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			logger.Infof("No records found for given sub")
+			err = nil
+			return
+		}
+		err = response.NewDatabaseError(err)
+		return
+	}
+
+	oauthCredentials = &creds
+	return
+}
+
 func (repository *OauthRepository) CreateOauthCredentials(ctx context.Context, oauthCreds *entities.OauthCredentials) (err error) {
 	logger.Infof("OauthRepository: CreateOauthCredentials")
 	db := tx.ExtractTx(ctx)

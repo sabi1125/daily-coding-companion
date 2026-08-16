@@ -71,6 +71,21 @@ func (mr *MockOauthRepositoryInputPortMockRecorder) FindUserBySub(ctx, sub any) 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindUserBySub", reflect.TypeOf((*MockOauthRepositoryInputPort)(nil).FindUserBySub), ctx, sub)
 }
 
+// FindUserByUserId mocks base method.
+func (m *MockOauthRepositoryInputPort) FindUserByUserId(ctx context.Context, userId string) (*entities.OauthCredentials, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindUserByUserId", ctx, userId)
+	ret0, _ := ret[0].(*entities.OauthCredentials)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindUserByUserId indicates an expected call of FindUserByUserId.
+func (mr *MockOauthRepositoryInputPortMockRecorder) FindUserByUserId(ctx, userId any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindUserByUserId", reflect.TypeOf((*MockOauthRepositoryInputPort)(nil).FindUserByUserId), ctx, userId)
+}
+
 // UpdateOauthInformationWithSub mocks base method.
 func (m *MockOauthRepositoryInputPort) UpdateOauthInformationWithSub(ctx context.Context, sub, refreshToken string, expiryAt time.Time) error {
 	m.ctrl.T.Helper()

@@ -34,3 +34,18 @@ func (repository *UsersRepository) CreateUser(ctx context.Context, user *entitie
 	}
 	return
 }
+
+func (repository *UsersRepository) GetAllUserIds(ctx context.Context) (userIds []string, err error) {
+	logger.Infof("UserRepository: GetAllUserIds")
+	db := tx.ExtractTx(ctx)
+	if db == nil {
+		db = repository.db
+	}
+
+	if err = db.Model(&entities.Users{}).Select("user_id").Find(&userIds).Error; err != nil {
+		err = response.NewDatabaseError(err)
+		return
+	}
+
+	return
+}

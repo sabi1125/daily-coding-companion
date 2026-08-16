@@ -10,6 +10,7 @@ import (
 
 type OauthRepositoryInputPort interface {
 	FindUserBySub(ctx context.Context, sub string) (oauthCredentials *entities.OauthCredentials, err error)
+	FindUserByUserId(ctx context.Context, userId string) (oauthCredentials *entities.OauthCredentials, err error)
 	CreateOauthCredentials(ctx context.Context, oauthCreds *entities.OauthCredentials) (err error)
 	UpdateOauthInformationWithSub(ctx context.Context, sub string, refreshToken string, expiryAt time.Time) (err error)
 }
