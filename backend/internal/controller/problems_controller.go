@@ -108,3 +108,35 @@ func (controller *ProblemsController) GetProblemDetail(c echo.Context) error {
 		UpdatedAt:       problem.UpdatedAt,
 	})
 }
+
+func (controller *ProblemsController) GetTodaysProblem(c echo.Context) error {
+	logger.Info("ProblemsController: GetTodaysProblem")
+
+	ctx := c.Request().Context()
+	userId := middleware.UserIDFromContext(ctx)
+	if userId == "" {
+		err := response.NewUnauthorized(errors.New("invalid user"))
+		return err
+	}
+
+	problem, err := controller.problemsInteractor.GetTodaysProblem(ctx, userId)
+	if err != nil {
+		return err
+	}
+
+	return c.JSON(http.StatusOK, response.TodaysProblemResponse{
+		Result: response.TodaysProblem{
+			ProblemId:       problem.ProblemId,
+			RawProblem:      problem.RawProblem,
+			Title:           problem.Title,
+			ProblemText:     problem.ProblemText,
+			AlgorithmTag:    problem.AlgorithmTag,
+			Difficulty:      problem.Difficulty,
+			Status:          problem.Status,
+			AiHelp:          problem.AiHelp,
+			NeedsReviewFlag: problem.NeedsReviewFlag,
+			CreatedAt:       problem.CreatedAt,
+			UpdatedAt:       problem.UpdatedAt,
+		},
+	})
+}

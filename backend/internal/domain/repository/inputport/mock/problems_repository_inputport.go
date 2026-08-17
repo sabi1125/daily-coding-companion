@@ -13,6 +13,7 @@ import (
 	entities "backend/internal/domain/entities"
 	context "context"
 	reflect "reflect"
+	time "time"
 
 	gomock "go.uber.org/mock/gomock"
 )
@@ -83,4 +84,19 @@ func (m *MockProblemsRepositoryInputPort) GetProblems(ctx context.Context, userI
 func (mr *MockProblemsRepositoryInputPortMockRecorder) GetProblems(ctx, userId, status any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProblems", reflect.TypeOf((*MockProblemsRepositoryInputPort)(nil).GetProblems), ctx, userId, status)
+}
+
+// GetTodaysproblem mocks base method.
+func (m *MockProblemsRepositoryInputPort) GetTodaysproblem(ctx context.Context, userId string, todaysDate time.Time) (entities.Problems, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetTodaysproblem", ctx, userId, todaysDate)
+	ret0, _ := ret[0].(entities.Problems)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetTodaysproblem indicates an expected call of GetTodaysproblem.
+func (mr *MockProblemsRepositoryInputPortMockRecorder) GetTodaysproblem(ctx, userId, todaysDate any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTodaysproblem", reflect.TypeOf((*MockProblemsRepositoryInputPort)(nil).GetTodaysproblem), ctx, userId, todaysDate)
 }

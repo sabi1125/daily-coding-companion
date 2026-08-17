@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"errors"
+	"time"
 
 	"backend/internal/domain/entities"
 	logger "backend/internal/log"
@@ -95,5 +96,29 @@ func (repository *ProblemsRepository) CreateProblem(ctx context.Context, problem
 		err = response.NewDatabaseError(err)
 		return
 	}
+	return
+}
+
+func (repository *ProblemsRepository) GetTodaysproblem(ctx context.Context, userId string, todaysDate time.Time) (problem entities.Problems, err error) {
+	logger.Infof("ProblemsRepository: GetTodaysproblem")
+	db := tx.ExtractTx(ctx)
+	if db == nil {
+		db = repository.db
+	}
+
+	if err = db.
+		Joins("JOIN ingest_runs ON ingest_runs.problem_id = problems.problem_id").
+		Where("problems.user_id = ? AND ingest_runs.ingest_date = ?", userId, todaysDate).
+		Preload("Submissions").
+		Take(&problem).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			err = nil
+			return
+		}
+		err = response.NewDatabaseError(err)
+		return
+	}
+
+	problem.Status = deriveProblemStatus(problem.Submissions)
 	return
 }

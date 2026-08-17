@@ -10,7 +10,10 @@ import "time"
 type TimeProvider interface {
 	Now() time.Time
 	ExpiryTimeCalculator() time.Time
+	TodaysDate() time.Time
 }
+
+var JST = time.FixedZone("JST", 9*60*60)
 
 type timeProvider struct{}
 
@@ -26,4 +29,9 @@ func (t *timeProvider) ExpiryTimeCalculator() time.Time {
 	now := time.Now()
 	expiryTime := now.AddDate(0, 0, 30)
 	return expiryTime
+}
+
+func (t *timeProvider) TodaysDate() time.Time {
+	now := time.Now().In(JST)
+	return time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, JST)
 }
