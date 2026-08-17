@@ -109,6 +109,7 @@ func (repository *ProblemsRepository) GetTodaysproblem(ctx context.Context, user
 	if err = db.
 		Joins("JOIN ingest_runs ON ingest_runs.problem_id = problems.problem_id").
 		Where("problems.user_id = ? AND ingest_runs.ingest_date = ?", userId, todaysDate).
+		Preload("Submissions").
 		Take(&problem).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			err = nil
@@ -117,5 +118,7 @@ func (repository *ProblemsRepository) GetTodaysproblem(ctx context.Context, user
 		err = response.NewDatabaseError(err)
 		return
 	}
+
+	problem.Status = deriveProblemStatus(problem.Submissions)
 	return
 }

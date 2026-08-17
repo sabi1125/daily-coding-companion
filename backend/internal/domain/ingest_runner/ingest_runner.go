@@ -15,12 +15,20 @@ import (
 	"backend/internal/util"
 
 	"github.com/anthropics/anthropic-sdk-go"
+	"github.com/go-sql-driver/mysql"
 	"github.com/invopop/jsonschema"
 	"golang.org/x/oauth2"
 	"google.golang.org/api/gmail/v1"
 	gmailoption "google.golang.org/api/option"
 	"gorm.io/gorm"
 )
+
+var errConcurrentRetry = errors.New("ingest run already recorded by a concurrent request")
+
+func isDuplicateIngestRun(err error) bool {
+	var mysqlErr *mysql.MySQLError
+	return errors.As(err, &mysqlErr) && mysqlErr.Number == 1062
+}
 
 type IngestRunner struct {
 	uuidGenerator      util.UUIDGenerator
@@ -58,17 +66,20 @@ func NewIngestRunner(
 func (r *IngestRunner) Ingest(ctx context.Context, userIds []string, retried bool) error {
 	logger.Info("ingest started!")
 
-	now := time.Now().In(util.JST)
-	ingestDate := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, util.JST)
-
 	for _, userId := range userIds {
 		logger.Infof("starting ingest for user: %s", userId)
-		if err := r.ingestForUser(ctx, userId, ingestDate, retried); err != nil {
+		if err := r.RunForUser(ctx, userId, retried); err != nil {
 			logger.Warnf("ingest failed for user %s: %v", userId, err)
 		}
 	}
 
 	return nil
+}
+
+func (r *IngestRunner) RunForUser(ctx context.Context, userId string, retried bool) error {
+	now := time.Now().In(util.JST)
+	ingestDate := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, util.JST)
+	return r.ingestForUser(ctx, userId, ingestDate, retried)
 }
 
 func (r *IngestRunner) ingestForUser(ctx context.Context, userId string, ingestDate time.Time, retried bool) error {
@@ -77,7 +88,7 @@ func (r *IngestRunner) ingestForUser(ctx context.Context, userId string, ingestD
 		return fmt.Errorf("creating ingest id: %w", err)
 	}
 
-	alreadyRan, err := r.hasAlreadyRun(ctx, userId, ingestDate)
+	alreadyRan, err := r.hasAlreadyRun(ctx, userId, ingestDate, retried)
 	if err != nil {
 		return fmt.Errorf("checking existing ingest run: %w", err)
 	}
@@ -137,28 +148,38 @@ func (r *IngestRunner) ingestForUser(ctx context.Context, userId string, ingestD
 		NeedsReviewFlag: needsReviewFlag,
 	}
 
-	err = r.txManager.WithinTransaction(ctx, func(ctx context.Context) error {
+	txErr := r.txManager.WithinTransaction(ctx, func(ctx context.Context) error {
 		if err := r.problemsRepository.CreateProblem(ctx, &problem); err != nil {
 			return err
 		}
-		return r.ingestRepository.CreateIngestWithErr(ctx, entities.IngestRuns{
+		if err := r.ingestRepository.CreateIngestWithErr(ctx, entities.IngestRuns{
 			IngestRunId: ingestUuid,
 			UserId:      userId,
 			ProblemId:   &problemId,
 			Status:      "success",
 			Retried:     retried,
 			IngestDate:  ingestDate,
-		})
+		}); err != nil {
+			if isDuplicateIngestRun(err) {
+				return errConcurrentRetry
+			}
+			return err
+		}
+		return nil
 	})
-	if err != nil {
-		return fmt.Errorf("saving problem and ingest run: %w", err)
+	if errors.Is(txErr, errConcurrentRetry) {
+		logger.Infof("ingest run for user %s already recorded by a concurrent request", userId)
+		return nil
+	}
+	if txErr != nil {
+		return fmt.Errorf("saving problem and ingest run: %w", txErr)
 	}
 
 	return nil
 }
 
-func (r *IngestRunner) hasAlreadyRun(ctx context.Context, userId string, ingestDate time.Time) (bool, error) {
-	ingest, err := r.ingestRepository.GetIngestByUserId(ctx, userId, ingestDate, false)
+func (r *IngestRunner) hasAlreadyRun(ctx context.Context, userId string, ingestDate time.Time, retried bool) (bool, error) {
+	ingest, err := r.ingestRepository.GetIngestByUserId(ctx, userId, ingestDate, retried)
 	if err != nil {
 		return false, err
 	}
@@ -174,6 +195,9 @@ func (r *IngestRunner) writeFailedIngestRun(ctx context.Context, ingestUuid, use
 		Retried:     retried,
 		IngestDate:  ingestDate,
 	}); err != nil {
+		if isDuplicateIngestRun(err) {
+			return nil
+		}
 		return fmt.Errorf("saving failed ingest run: %w", err)
 	}
 	return nil

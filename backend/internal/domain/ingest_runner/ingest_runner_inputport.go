@@ -4,5 +4,5 @@ package ingestrunner
 import "context"
 
 type IngestRunnerInputPort interface {
-	Ingest(ctx context.Context, userIds []string, retried bool) error
+	RunForUser(ctx context.Context, userId string, retried bool) error
 }

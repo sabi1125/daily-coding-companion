@@ -110,7 +110,7 @@ func (controller *ProblemsController) GetProblemDetail(c echo.Context) error {
 }
 
 func (controller *ProblemsController) GetTodaysProblem(c echo.Context) error {
-	logger.Info("ProblemsController: GetProblemDetails")
+	logger.Info("ProblemsController: GetTodaysProblem")
 
 	ctx := c.Request().Context()
 	userId := middleware.UserIDFromContext(ctx)
@@ -124,16 +124,19 @@ func (controller *ProblemsController) GetTodaysProblem(c echo.Context) error {
 		return err
 	}
 
-	return c.JSON(http.StatusOK, response.ProblemDetail{
-		ProblemId:       problem.ProblemId,
-		RawProblem:      problem.RawProblem,
-		Title:           problem.Title,
-		ProblemText:     problem.ProblemText,
-		AlgorithmTag:    problem.AlgorithmTag,
-		Difficulty:      problem.Difficulty,
-		AiHelp:          problem.AiHelp,
-		NeedsReviewFlag: problem.NeedsReviewFlag,
-		CreatedAt:       problem.CreatedAt,
-		UpdatedAt:       problem.UpdatedAt,
+	return c.JSON(http.StatusOK, response.TodaysProblemResponse{
+		Result: response.TodaysProblem{
+			ProblemId:       problem.ProblemId,
+			RawProblem:      problem.RawProblem,
+			Title:           problem.Title,
+			ProblemText:     problem.ProblemText,
+			AlgorithmTag:    problem.AlgorithmTag,
+			Difficulty:      problem.Difficulty,
+			Status:          problem.Status,
+			AiHelp:          problem.AiHelp,
+			NeedsReviewFlag: problem.NeedsReviewFlag,
+			CreatedAt:       problem.CreatedAt,
+			UpdatedAt:       problem.UpdatedAt,
+		},
 	})
 }

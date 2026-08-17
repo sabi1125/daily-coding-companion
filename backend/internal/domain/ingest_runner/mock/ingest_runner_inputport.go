@@ -40,16 +40,16 @@ func (m *MockIngestRunnerInputPort) EXPECT() *MockIngestRunnerInputPortMockRecor
 	return m.recorder
 }
 
-// Ingest mocks base method.
-func (m *MockIngestRunnerInputPort) Ingest(ctx context.Context, userIds []string, retried bool) error {
+// RunForUser mocks base method.
+func (m *MockIngestRunnerInputPort) RunForUser(ctx context.Context, userId string, retried bool) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Ingest", ctx, userIds, retried)
+	ret := m.ctrl.Call(m, "RunForUser", ctx, userId, retried)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// Ingest indicates an expected call of Ingest.
-func (mr *MockIngestRunnerInputPortMockRecorder) Ingest(ctx, userIds, retried any) *gomock.Call {
+// RunForUser indicates an expected call of RunForUser.
+func (mr *MockIngestRunnerInputPortMockRecorder) RunForUser(ctx, userId, retried any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Ingest", reflect.TypeOf((*MockIngestRunnerInputPort)(nil).Ingest), ctx, userIds, retried)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RunForUser", reflect.TypeOf((*MockIngestRunnerInputPort)(nil).RunForUser), ctx, userId, retried)
 }

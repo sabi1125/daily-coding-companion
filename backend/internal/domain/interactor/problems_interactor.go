@@ -48,39 +48,53 @@ func (interactor *ProblemsInteractor) GetProblemDetails(ctx context.Context, use
 }
 
 func (interactor *ProblemsInteractor) GetTodaysProblem(ctx context.Context, userId string) (problem entities.Problems, err error) {
-	logger.Info("ProblemsInteractor: GetProblemDetails")
-	timeProvider := util.NewTimeProvider()
-	todaysDate := timeProvider.TodaysDate()
+	logger.Info("ProblemsInteractor: GetTodaysProblem")
+	todaysDate := util.NewTimeProvider().TodaysDate()
 
 	problem, err = interactor.problemsRepository.GetTodaysproblem(ctx, userId, todaysDate)
 	if err != nil {
 		return
 	}
-
-	if problem.ProblemId == "" {
-		// check if retried
-		ingest, getErr := interactor.ingestRepository.GetIngestByUserId(ctx, userId, todaysDate, true)
-		if getErr != nil {
-			err = getErr
-			return
-		}
-
-		if len(ingest) > 0 {
-			err = response.NewProblemNotFound(errors.New("ingest retry has already ran. todays problems does not exist. contact the developer"))
-			return
-		}
-
-		// retry
-		if ingestErr := interactor.ingestRunner.Ingest(ctx, []string{userId}, true); ingestErr != nil {
-			err = ingestErr
-			return
-		}
-
-		problem, err = interactor.problemsRepository.GetTodaysproblem(ctx, userId, todaysDate)
-		if err != nil {
-			return
-		}
+	if err = verifyProblemOwnership(problem, userId); err != nil {
+		problem = entities.Problems{}
+		return
+	}
+	if problem.ProblemId != "" {
+		return
 	}
 
+	alreadyRetried, getErr := interactor.ingestRepository.GetIngestByUserId(ctx, userId, todaysDate, true)
+	if getErr != nil {
+		err = getErr
+		return
+	}
+	if len(alreadyRetried) > 0 {
+		err = response.NewNoProblemToday(errors.New("retry already used up for today"))
+		return
+	}
+
+	if ingestErr := interactor.ingestRunner.RunForUser(ctx, userId, true); ingestErr != nil {
+		err = ingestErr
+		return
+	}
+
+	problem, err = interactor.problemsRepository.GetTodaysproblem(ctx, userId, todaysDate)
+	if err != nil {
+		return
+	}
+	if err = verifyProblemOwnership(problem, userId); err != nil {
+		problem = entities.Problems{}
+		return
+	}
+	if problem.ProblemId == "" {
+		err = response.NewNoProblemToday(errors.New("ingest did not produce a problem for today"))
+	}
 	return
+}
+
+func verifyProblemOwnership(problem entities.Problems, userId string) error {
+	if problem.ProblemId != "" && problem.UserId != userId {
+		return response.NewUnauthorized(errors.New("today's problem does not belong to the caller"))
+	}
+	return nil
 }
