@@ -1,4 +1,4 @@
-package ingest
+package ingestrunner
 
 import (
 	"context"
@@ -8,22 +8,13 @@ import (
 	"fmt"
 	"time"
 
-	"backend/internal/config"
-<<<<<<< Updated upstream
 	"backend/internal/domain/entities"
 	"backend/internal/domain/repository"
-	"backend/internal/infrastructure"
 	logger "backend/internal/log"
 	"backend/internal/tx"
-=======
-	ingestrunner "backend/internal/domain/ingest_runner"
-	"backend/internal/domain/repository"
-	"backend/internal/infrastructure"
->>>>>>> Stashed changes
 	"backend/internal/util"
 
 	"github.com/anthropics/anthropic-sdk-go"
-	"github.com/anthropics/anthropic-sdk-go/option"
 	"github.com/invopop/jsonschema"
 	"golang.org/x/oauth2"
 	"google.golang.org/api/gmail/v1"
@@ -31,9 +22,7 @@ import (
 	"gorm.io/gorm"
 )
 
-var jst = time.FixedZone("JST", 9*60*60)
-
-type runner struct {
+type IngestRunner struct {
 	uuidGenerator      util.UUIDGenerator
 	oauthCfg           *oauth2.Config
 	ingestRepository   *repository.IngestRepository
@@ -41,63 +30,48 @@ type runner struct {
 	problemsRepository *repository.ProblemsRepository
 	claudeClient       anthropic.Client
 	txManager          tx.Manager
+	db                 *gorm.DB
 }
 
-func Ingest(db *gorm.DB) error {
+func NewIngestRunner(
+	uuidGenerator util.UUIDGenerator,
+	oauthCfg *oauth2.Config,
+	ingestRepository *repository.IngestRepository,
+	oauthRepository *repository.OauthRepository,
+	problemsRepository *repository.ProblemsRepository,
+	claudeClient anthropic.Client,
+	txManager tx.Manager,
+	db *gorm.DB,
+) *IngestRunner {
+	return &IngestRunner{
+		uuidGenerator:      uuidGenerator,
+		oauthCfg:           oauthCfg,
+		ingestRepository:   ingestRepository,
+		oauthRepository:    oauthRepository,
+		problemsRepository: problemsRepository,
+		claudeClient:       claudeClient,
+		txManager:          txManager,
+		db:                 db,
+	}
+}
+
+func (r *IngestRunner) Ingest(ctx context.Context, userIds []string, retried bool) error {
 	logger.Info("ingest started!")
 
-	ctx := context.Background()
-	googleCfg := config.LoadGoogleConfigFromEnv()
-	claudeCfg := config.LoadClaudeConfigFromEnv()
+	now := time.Now().In(util.JST)
+	ingestDate := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, util.JST)
 
-	r := &runner{
-		uuidGenerator:      util.NewUUIDGenerator(),
-		oauthCfg:           config.LoadOauthConfig(googleCfg),
-		ingestRepository:   repository.NewIngestRepository(db),
-		oauthRepository:    repository.NewOauthRepository(db),
-		problemsRepository: repository.NewProblemsRepository(db),
-		claudeClient:       anthropic.NewClient(option.WithAPIKey(claudeCfg.APIKey)),
-		txManager:          infrastructure.NewTransactionManager(db),
-	}
-
-	now := time.Now().In(jst)
-	ingestDate := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, jst)
-
-	userIds, err := r.oauthRepository.GetAllUserIds(ctx)
-	if err != nil {
-		return err
-	}
-
-<<<<<<< Updated upstream
 	for _, userId := range userIds {
 		logger.Infof("starting ingest for user: %s", userId)
-		if err := r.ingestForUser(ctx, userId, ingestDate); err != nil {
+		if err := r.ingestForUser(ctx, userId, ingestDate, retried); err != nil {
 			logger.Warnf("ingest failed for user %s: %v", userId, err)
 		}
-=======
-	// create new ingest
-	ingest := ingestrunner.NewIngestRunner(
-		uuidGenerator,
-		oauthCfg,
-		&ingestRepository,
-		&oauthRepository,
-		&problemsRepository,
-		claudeClient,
-		txManager,
-		db,
-	)
-
-	// run ingest with all userIds
-	ingestErr := ingest.Ingest(ctx, userIds, false)
-	if ingestErr != nil {
-		return ingestErr
->>>>>>> Stashed changes
 	}
 
 	return nil
 }
 
-func (r *runner) ingestForUser(ctx context.Context, userId string, ingestDate time.Time) error {
+func (r *IngestRunner) ingestForUser(ctx context.Context, userId string, ingestDate time.Time, retried bool) error {
 	ingestUuid, err := r.uuidGenerator.NewV7()
 	if err != nil {
 		return fmt.Errorf("creating ingest id: %w", err)
@@ -117,30 +91,16 @@ func (r *runner) ingestForUser(ctx context.Context, userId string, ingestDate ti
 		return fmt.Errorf("getting oauth credentials: %w", err)
 	}
 	if userOauth == nil {
-		// Shouldn't happen — GetAllUserIds enumerates this same table, and
-		// auth creates users/oauth_credentials together in one transaction
-		// — but a nil here must never reach userOauth.RefreshToken below.
 		return errors.New("no oauth credentials found for user, despite being in the connected-users list")
 	}
 
-	// Only a dead refresh token is a real failure — the user has to
-	// reconnect Gmail themselves, so it's never papered over with a
-	// fallback problem (docs/DECISIONS.md D1: reauth must stay visible,
-	// never a silent failure). Every other way of not getting today's real
-	// email (transient exchange error, Gmail unreachable, no email found)
-	// just falls through to Claude generating one instead, with rawBody
-	// left empty.
 	tokenSource := r.oauthCfg.TokenSource(ctx, &oauth2.Token{RefreshToken: userOauth.RefreshToken})
 	rawBody := ""
 	_, tokenErr := tokenSource.Token()
 	if tokenErr != nil {
 		var receivedErr *oauth2.RetrieveError
 		if errors.As(tokenErr, &receivedErr) && receivedErr.ErrorCode == "invalid_grant" {
-			// The one real failure — always stop here, whether or not the
-			// failure row itself was written successfully. Must not fall
-			// through to Claude/the success write below (that would waste
-			// a Claude call and collide on ingestUuid's primary key).
-			return r.writeFailedIngestRun(ctx, ingestUuid, userId, ingestDate, "refresh token invalid")
+			return r.writeFailedIngestRun(ctx, ingestUuid, userId, ingestDate, retried, "refresh token invalid")
 		}
 		logger.Warnf("problem exchanging refresh token for user %s, asking claude for a fallback problem: %v", userId, tokenErr)
 	} else if fetched, fetchErr := fetchTodaysEmail(ctx, tokenSource); fetchErr != nil {
@@ -186,7 +146,7 @@ func (r *runner) ingestForUser(ctx context.Context, userId string, ingestDate ti
 			UserId:      userId,
 			ProblemId:   &problemId,
 			Status:      "success",
-			Retried:     false,
+			Retried:     retried,
 			IngestDate:  ingestDate,
 		})
 	})
@@ -197,7 +157,7 @@ func (r *runner) ingestForUser(ctx context.Context, userId string, ingestDate ti
 	return nil
 }
 
-func (r *runner) hasAlreadyRun(ctx context.Context, userId string, ingestDate time.Time) (bool, error) {
+func (r *IngestRunner) hasAlreadyRun(ctx context.Context, userId string, ingestDate time.Time) (bool, error) {
 	ingest, err := r.ingestRepository.GetIngestByUserId(ctx, userId, ingestDate, false)
 	if err != nil {
 		return false, err
@@ -205,13 +165,13 @@ func (r *runner) hasAlreadyRun(ctx context.Context, userId string, ingestDate ti
 	return len(ingest) > 0, nil
 }
 
-func (r *runner) writeFailedIngestRun(ctx context.Context, ingestUuid, userId string, ingestDate time.Time, errMsg string) error {
+func (r *IngestRunner) writeFailedIngestRun(ctx context.Context, ingestUuid, userId string, ingestDate time.Time, retried bool, errMsg string) error {
 	if err := r.ingestRepository.CreateIngestWithErr(ctx, entities.IngestRuns{
 		IngestRunId: ingestUuid,
 		UserId:      userId,
 		Status:      "failed",
 		Error:       &errMsg,
-		Retried:     false,
+		Retried:     retried,
 		IngestDate:  ingestDate,
 	}); err != nil {
 		return fmt.Errorf("saving failed ingest run: %w", err)
@@ -247,7 +207,7 @@ func toolInputSchema(v any) anthropic.ToolInputSchemaParam {
 	return schema
 }
 
-func (r *runner) parseWithClaude(ctx context.Context, rawBody string) (parsedProblem, error) {
+func (r *IngestRunner) parseWithClaude(ctx context.Context, rawBody string) (parsedProblem, error) {
 	var prompt string
 	if rawBody == "" {
 		prompt = "No Daily Coding Problem email was found for today. Invent an original " +

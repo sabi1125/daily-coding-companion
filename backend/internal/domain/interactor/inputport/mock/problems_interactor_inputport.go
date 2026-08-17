@@ -70,3 +70,18 @@ func (mr *MockProblemsInteractorInputPortMockRecorder) GetProblems(ctx, userId, 
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProblems", reflect.TypeOf((*MockProblemsInteractorInputPort)(nil).GetProblems), ctx, userId, status)
 }
+
+// GetTodaysProblem mocks base method.
+func (m *MockProblemsInteractorInputPort) GetTodaysProblem(ctx context.Context, userId string) (entities.Problems, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetTodaysProblem", ctx, userId)
+	ret0, _ := ret[0].(entities.Problems)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetTodaysProblem indicates an expected call of GetTodaysProblem.
+func (mr *MockProblemsInteractorInputPortMockRecorder) GetTodaysProblem(ctx, userId any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTodaysProblem", reflect.TypeOf((*MockProblemsInteractorInputPort)(nil).GetTodaysProblem), ctx, userId)
+}

@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"backend/internal/domain/entities"
+	ingestRunnerMock "backend/internal/domain/ingest_runner/mock"
 	inputportMock "backend/internal/domain/repository/inputport/mock"
 	"backend/internal/response"
 
@@ -57,7 +58,9 @@ func TestProblemsInteractor_GetProblems(t *testing.T) {
 			mockProblems := inputportMock.NewMockProblemsRepositoryInputPort(ctrl)
 			tt.prepareFunc(mockProblems)
 
-			interactor := NewProblemsInteractor(mockProblems)
+			mockIngestRunner := ingestRunnerMock.NewMockIngestRunnerInputPort(ctrl)
+			mockIngestRepository := inputportMock.NewMockIngestRepositoryInputPort(ctrl)
+			interactor := NewProblemsInteractor(mockProblems, mockIngestRunner, mockIngestRepository)
 
 			problems, err := interactor.GetProblems(ctx, testUserId, tt.status)
 
@@ -107,7 +110,9 @@ func TestProblemsInteractor_GetProblemDetails(t *testing.T) {
 			mockProblems := inputportMock.NewMockProblemsRepositoryInputPort(ctrl)
 			tt.prepareFunc(mockProblems)
 
-			interactor := NewProblemsInteractor(mockProblems)
+			mockIngestRunner := ingestRunnerMock.NewMockIngestRunnerInputPort(ctrl)
+			mockIngestRepository := inputportMock.NewMockIngestRepositoryInputPort(ctrl)
+			interactor := NewProblemsInteractor(mockProblems, mockIngestRunner, mockIngestRepository)
 
 			problem, err := interactor.GetProblemDetails(ctx, testUserId, testProblemId)
 

@@ -3,13 +3,17 @@ package infrastructure
 import (
 	"backend/internal/config"
 	"backend/internal/controller"
+	ingestrunner "backend/internal/domain/ingest_runner"
 	"backend/internal/domain/interactor"
 	"backend/internal/domain/repository"
 	"backend/internal/infrastructure/middleware"
 	"backend/internal/tx"
 	"backend/internal/util"
 
+	"github.com/anthropics/anthropic-sdk-go"
+	"github.com/anthropics/anthropic-sdk-go/option"
 	"github.com/labstack/echo/v4"
+	"golang.org/x/oauth2"
 	"gorm.io/gorm"
 )
 
@@ -20,14 +24,39 @@ func Router(e *echo.Echo, db *gorm.DB) {
 	settingRepository := repository.NewSettingsRepository(db)
 	sessionRepository := repository.NewSessionsRepository(db)
 	problemRepository := repository.NewProblemsRepository(db)
+	ingestRepository := repository.NewIngestRepository(db)
+
+	// config
+	googleCfg := config.LoadGoogleConfigFromEnv()
+	googleOauthCfg := config.LoadOauthConfig(googleCfg)
+	claudeCfg := config.LoadClaudeConfigFromEnv()
+
+	// client
+	claudeClient := anthropic.NewClient(option.WithAPIKey(claudeCfg.APIKey))
+
+	// uuid generator
+	uuidGenerator := util.NewUUIDGenerator()
 
 	txManager := NewTransactionManager(db)
 
+	// create ingest runner
+	ingestRunner := ingestrunner.NewIngestRunner(
+		uuidGenerator,
+		googleOauthCfg,
+		ingestRepository,
+		oauthRepository,
+		problemRepository,
+		claudeClient,
+		txManager,
+		db,
+	)
+
+	// routes
 	RegisteredHealthRouter(e, db)
-	RegisteredAuthRoutes(e, db, userRepository, oauthRepository, settingRepository, sessionRepository, txManager)
+	RegisteredAuthRoutes(e, db, userRepository, oauthRepository, settingRepository, sessionRepository, *googleCfg, googleOauthCfg, uuidGenerator, txManager)
 	RegisteredSettingsRoutes(e, db, sessionRepository, txManager)
-	RegisteredProblemsRoutes(e, db, problemRepository, sessionRepository)
-	RegisteredSubmittedSolutionsRoutes(e, db, sessionRepository, problemRepository, txManager)
+	RegisteredProblemsRoutes(e, db, problemRepository, sessionRepository, ingestRunner, ingestRepository)
+	RegisteredSubmittedSolutionsRoutes(e, db, sessionRepository, problemRepository, uuidGenerator, txManager)
 }
 
 func RegisteredHealthRouter(e *echo.Echo, db *gorm.DB) {
@@ -46,14 +75,13 @@ func RegisteredAuthRoutes(
 	oauthRepository *repository.OauthRepository,
 	settingRepository *repository.SettingsRepository,
 	sessionRepository *repository.SessionsRepository,
+	googleCfg config.GoogleConfig,
+	googleOauthCfg *oauth2.Config,
+	uuidGenerator util.UUIDGenerator,
 	txManager tx.Manager,
 ) {
-	googleCfg := config.LoadGoogleConfigFromEnv()
-	googleOauthCfg := config.LoadOauthConfig(googleCfg)
-
 	auth := e.Group("/auth")
 	repository := repository.NewAuthRepository(db)
-	uuidGenerator := util.NewUUIDGenerator()
 	interactor := interactor.NewAuthInteractor(
 		*googleOauthCfg,
 		repository,
@@ -92,14 +120,17 @@ func RegisteredProblemsRoutes(
 	db *gorm.DB,
 	repository *repository.ProblemsRepository,
 	sessionRepository *repository.SessionsRepository,
+	ingestRunner *ingestrunner.IngestRunner,
+	ingestRepository *repository.IngestRepository,
 ) {
 	problems := e.Group("/problems")
 	problems.Use(middleware.Auth(sessionRepository))
-	interactor := interactor.NewProblemsInteractor(repository)
+	interactor := interactor.NewProblemsInteractor(repository, ingestRunner, ingestRepository)
 	controller := controller.NewProblemsController(interactor)
 
 	problems.GET("", controller.GetProblems)
 	problems.GET("/:id", controller.GetProblemDetail)
+	problems.GET("/today", controller.GetTodaysProblem)
 }
 
 func RegisteredSubmittedSolutionsRoutes(
@@ -107,12 +138,12 @@ func RegisteredSubmittedSolutionsRoutes(
 	db *gorm.DB,
 	sessionRepository *repository.SessionsRepository,
 	problemRepository *repository.ProblemsRepository,
+	uuidGenerator util.UUIDGenerator,
 	txManager tx.Manager,
 ) {
 	problems := e.Group("/submissions")
 	problems.Use(middleware.Auth(sessionRepository))
 	repository := repository.NewSubmittedSolutionsRepository(db)
-	uuidGenerator := util.NewUUIDGenerator()
 	interactor := interactor.NewSubmittedSolutionInteractor(repository, problemRepository, uuidGenerator, txManager)
 	controller := controller.NewSubmittedSolutionsController(interactor)
 
