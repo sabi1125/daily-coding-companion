@@ -13,4 +13,5 @@ type ProblemsRepositoryInputPort interface {
 	GetProblemDetails(ctx context.Context, userId string, problemId string) (problem entities.Problems, err error)
 	CreateProblem(ctx context.Context, problem *entities.Problems) (err error)
 	GetTodaysproblem(ctx context.Context, userId string, todaysDate time.Time) (problem entities.Problems, err error)
+	UpdateProblemWithAIHelp(ctx context.Context, userId string, problemId string, aiHelp string) (err error)
 }

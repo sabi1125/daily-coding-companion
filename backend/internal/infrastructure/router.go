@@ -55,7 +55,7 @@ func Router(e *echo.Echo, db *gorm.DB) {
 	RegisteredHealthRouter(e, db)
 	RegisteredAuthRoutes(e, db, userRepository, oauthRepository, settingRepository, sessionRepository, *googleCfg, googleOauthCfg, uuidGenerator, txManager)
 	RegisteredSettingsRoutes(e, db, sessionRepository, txManager)
-	RegisteredProblemsRoutes(e, db, problemRepository, sessionRepository, ingestRunner, ingestRepository)
+	RegisteredProblemsRoutes(e, db, problemRepository, sessionRepository, ingestRunner, ingestRepository, settingRepository, claudeClient)
 	RegisteredSubmittedSolutionsRoutes(e, db, sessionRepository, problemRepository, uuidGenerator, txManager)
 }
 
@@ -122,15 +122,18 @@ func RegisteredProblemsRoutes(
 	sessionRepository *repository.SessionsRepository,
 	ingestRunner *ingestrunner.IngestRunner,
 	ingestRepository *repository.IngestRepository,
+	settingRepository *repository.SettingsRepository,
+	claudeClient anthropic.Client,
 ) {
 	problems := e.Group("/problems")
 	problems.Use(middleware.Auth(sessionRepository))
-	interactor := interactor.NewProblemsInteractor(repository, ingestRunner, ingestRepository)
+	interactor := interactor.NewProblemsInteractor(repository, ingestRunner, ingestRepository, settingRepository, claudeClient)
 	controller := controller.NewProblemsController(interactor)
 
 	problems.GET("", controller.GetProblems)
 	problems.GET("/:id", controller.GetProblemDetail)
 	problems.GET("/today", controller.GetTodaysProblem)
+	problems.GET("/:id/help", controller.GetAIHelp)
 }
 
 func RegisteredSubmittedSolutionsRoutes(
@@ -141,12 +144,12 @@ func RegisteredSubmittedSolutionsRoutes(
 	uuidGenerator util.UUIDGenerator,
 	txManager tx.Manager,
 ) {
-	problems := e.Group("/submissions")
-	problems.Use(middleware.Auth(sessionRepository))
+	solutions := e.Group("/submissions")
+	solutions.Use(middleware.Auth(sessionRepository))
 	repository := repository.NewSubmittedSolutionsRepository(db)
 	interactor := interactor.NewSubmittedSolutionInteractor(repository, problemRepository, uuidGenerator, txManager)
 	controller := controller.NewSubmittedSolutionsController(interactor)
 
-	problems.GET("/:id", controller.GetUserSubmissions)
-	problems.POST("/:id", controller.SubmitSolutions)
+	solutions.GET("/:id", controller.GetUserSubmissions)
+	solutions.POST("/:id", controller.SubmitSolutions)
 }

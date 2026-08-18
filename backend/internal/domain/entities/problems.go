@@ -34,3 +34,10 @@ type Problems struct {
 	Status      string               `json:"status" gorm:"-"`
 	Submissions []SubmittedSolutions `json:"-" gorm:"foreignKey:ProblemId;references:ProblemId"`
 }
+
+type AIHelp struct {
+	Concept     string `json:"concept" jsonschema:"required,description=The underlying concept/technique this problem relies on, explained on its own, not just how it applies to this problem"`
+	Nudge       string `json:"nudge" jsonschema:"required,description=A short question or hint that points toward the right idea without stating it outright"`
+	Approach    string `json:"approach" jsonschema:"required,description=The strategy/algorithm to use, described in plain language"`
+	Walkthrough string `json:"walkthrough" jsonschema:"required,description=A prose talk-through of how to apply the approach to this problem's inputs, step by step — not a full working solution or runnable code"`
+}

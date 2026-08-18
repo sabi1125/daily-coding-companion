@@ -2,9 +2,6 @@ package response
 
 import "time"
 
-// ProblemSummary is the History-list shape — only what the list view
-// renders. Full problem content (raw_problem, problem_text, algorithm_tag,
-// difficulty, ai_help) is what GET /problems/{id} is for.
 type ProblemSummary struct {
 	ProblemId       string    `json:"problem_id"`
 	Title           *string   `json:"title"`
@@ -18,9 +15,6 @@ type GetProblemsResponse struct {
 	Total  int              `json:"total"`
 }
 
-// ProblemDetail is the GET /problems/{id} shape — full problem content, no
-// status (submissions, which status is derived from, come from a separate
-// GET /submissions/{id} call, not this one).
 type ProblemDetail struct {
 	ProblemId       string    `json:"problem_id"`
 	RawProblem      string    `json:"raw_problem"`
@@ -34,9 +28,6 @@ type ProblemDetail struct {
 	UpdatedAt       time.Time `json:"updated_at"`
 }
 
-// TodaysProblem is the GET /problems/today shape — full problem content
-// plus status, since /today can return a problem the caller already has
-// submissions against from earlier in the day.
 type TodaysProblem struct {
 	ProblemId       string    `json:"problem_id"`
 	RawProblem      string    `json:"raw_problem"`
@@ -53,4 +44,11 @@ type TodaysProblem struct {
 
 type TodaysProblemResponse struct {
 	Result TodaysProblem `json:"result"`
+}
+
+type AIHelp struct {
+	Concept     string `json:"concept"`
+	Nudge       string `json:"nudge"`
+	Approach    string `json:"approach"`
+	Walkthrough string `json:"walkthrough"`
 }

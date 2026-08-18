@@ -41,6 +41,21 @@ func (m *MockProblemsInteractorInputPort) EXPECT() *MockProblemsInteractorInputP
 	return m.recorder
 }
 
+// GetAIHelp mocks base method.
+func (m *MockProblemsInteractorInputPort) GetAIHelp(ctx context.Context, userId, problemId string) (entities.AIHelp, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAIHelp", ctx, userId, problemId)
+	ret0, _ := ret[0].(entities.AIHelp)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetAIHelp indicates an expected call of GetAIHelp.
+func (mr *MockProblemsInteractorInputPortMockRecorder) GetAIHelp(ctx, userId, problemId any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAIHelp", reflect.TypeOf((*MockProblemsInteractorInputPort)(nil).GetAIHelp), ctx, userId, problemId)
+}
+
 // GetProblemDetails mocks base method.
 func (m *MockProblemsInteractorInputPort) GetProblemDetails(ctx context.Context, userId, problemId string) (entities.Problems, error) {
 	m.ctrl.T.Helper()

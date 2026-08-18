@@ -325,6 +325,75 @@ Gets a problem whose id is `path_param.id = problems.problem_id`.
 
 ---
 
+## Get AI help API
+
+### GET /problems/{id}/help
+
+**Summary**
+
+Get's help from AI for the problem.
+
+**Description**
+
+Get's help for a problem that the user is stuck in using Claude AI which generates a structured guide on how the problem at hand can be solved.
+
+1. Validate the session cookie and get the calling `user_id` from it.
+    - If the session is missing/invalid/expired, exit with `401 Unauthorized`.
+2. Check if the problem actually exists using `user_id` and `problem_id`.
+    - If the problem does not exist exit with `404 Not Found`.
+3. Check if `problems.ai_help` record already exists.
+    - If exists Unmarshal `problems.ai_help` and return AI help.
+    - If the `problems.ai_help` is null then continue to next step.
+4. Get user's AI help preferences(`get_help_preferences`) from `settings` table.
+    - If AI help preferences does not exist for the said user then continue.
+    - If AI help preferences exists for the said user then attach the preferences to the prompt in #5.
+5. Prompt the Claude API to give help. The response from AI should be in the following format.
+    - Concept
+    - Nudge
+    - Approach
+    - walkthrough
+    - If error occurrs when trying to get help from Claude exit with `500 internal server error` .
+6. Marshal the structured response from step 5 and save it to `problems.ai_help`.
+    - If error occurs while saving the AI help to the database exit with `500 internal server error`.
+7. Return that same structured response from step 5/6 — the one just generated and saved, not a re-fetch from the database.
+
+**Auth** - Required
+
+**Cookie** - session.session_id
+
+**Path parameters**
+
+| Name | Type | Description |
+|---|---|---|
+| id | string | problem id |
+
+
+**Responses**
+
+`200 Success`
+
+```json
+{
+    "concept": "This is a classic lookup problem — using a hashmap trades extra space for a single pass instead of comparing every pair.",
+    "nudge": "Can you avoid checking every pair of numbers?",
+    "approach": "As you iterate, store each number's index in a hashmap. For each new number, check whether target minus that number is already in the map.",
+    "walkthrough": "nums = [2,7,11,15], target = 9 → see 2, store it. See 7, check 9-7=2 — found! Return their indices."
+}
+```
+
+**Errors**
+
+| Status | Category | When | Body |
+|---|---|---|---|
+| 401 | Expected | Invalid/missing/expired session cookie | `{ "message" : "Unauthorized" }` |
+| 404 | Expected | When the said problem is not found | `{ "message" : "Problem not found" }` |
+| 500 | Operational | When claude api fails for some reason | `{ "message" : "internal server error" }` |
+| 500 | Operational | Reading settings from the database failed | `{ "message" : "internal server error" }` |
+| 500 | Operational | Inserting ai help in database fails | `{ "message" : "internal server error" }` |
+| 500 | Operational | When database processes fails | `{ "message" : "internal server error" }` |
+
+---
+
 ## Get user setting API
 
 ### `GET /settings`
@@ -493,3 +562,4 @@ Insert's submissions.
 | 401 | Expected | Invalid/missing/expired session cookie | `{ "message" : "Unauthorized" }` |
 | 404 | Expected | When problem not found, or the problem_id belongs to another user | `{ "message" : "Problem not found" }` |
 | 500 | Operational | Inserting solutions in database failed | `{ "message" : "internal server error" }` |
+

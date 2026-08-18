@@ -254,3 +254,196 @@ func TestProblemsController_GetProblemDetail_ResponseShape(t *testing.T) {
 	assert.Equal(t, "raw text", detail.RawProblem)
 	assert.Equal(t, &title, detail.Title)
 }
+
+func TestProblemsController_GetTodaysProblem(t *testing.T) {
+	tests := []struct {
+		name           string
+		omitUserID     bool
+		mockSetup      func(m *interactorMock.MockProblemsInteractorInputPort)
+		expectedStatus int
+	}{
+		{
+			name: "success",
+			mockSetup: func(m *interactorMock.MockProblemsInteractorInputPort) {
+				m.EXPECT().GetTodaysProblem(gomock.Any(), "user-1").
+					Return(entities.Problems{ProblemId: testProblemID, Status: "Open"}, nil)
+			},
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name:           "missing user_id — 401",
+			omitUserID:     true,
+			mockSetup:      func(m *interactorMock.MockProblemsInteractorInputPort) {},
+			expectedStatus: http.StatusUnauthorized,
+		},
+		{
+			name: "no problem available today — 404",
+			mockSetup: func(m *interactorMock.MockProblemsInteractorInputPort) {
+				m.EXPECT().GetTodaysProblem(gomock.Any(), "user-1").
+					Return(entities.Problems{}, response.NewNoProblemToday(errors.New("retry already used up")))
+			},
+			expectedStatus: http.StatusNotFound,
+		},
+		{
+			name: "interactor error propagates",
+			mockSetup: func(m *interactorMock.MockProblemsInteractorInputPort) {
+				m.EXPECT().GetTodaysProblem(gomock.Any(), "user-1").
+					Return(entities.Problems{}, response.NewDatabaseError(errors.New("db down")))
+			},
+			expectedStatus: http.StatusInternalServerError,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			mockInteractor := interactorMock.NewMockProblemsInteractorInputPort(ctrl)
+			tt.mockSetup(mockInteractor)
+
+			e := newTestEcho()
+			controller := NewProblemsController(mockInteractor)
+			e.GET("/problems/today", controller.GetTodaysProblem)
+
+			req := httptest.NewRequest(http.MethodGet, "/problems/today", nil)
+			if !tt.omitUserID {
+				req = withUserID(req, "user-1")
+			}
+			rec := httptest.NewRecorder()
+			e.ServeHTTP(rec, req)
+
+			assert.Equal(t, tt.expectedStatus, rec.Code)
+		})
+	}
+}
+
+func TestProblemsController_GetTodaysProblem_ResponseShape(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockInteractor := interactorMock.NewMockProblemsInteractorInputPort(ctrl)
+	mockInteractor.EXPECT().GetTodaysProblem(gomock.Any(), "user-1").
+		Return(entities.Problems{ProblemId: testProblemID, RawProblem: "raw text", Status: "Open"}, nil)
+
+	e := newTestEcho()
+	controller := NewProblemsController(mockInteractor)
+	e.GET("/problems/today", controller.GetTodaysProblem)
+
+	req := httptest.NewRequest(http.MethodGet, "/problems/today", nil)
+	req = withUserID(req, "user-1")
+	rec := httptest.NewRecorder()
+	e.ServeHTTP(rec, req)
+
+	assert.Equal(t, http.StatusOK, rec.Code)
+
+	var body response.TodaysProblemResponse
+	assert.NoError(t, json.Unmarshal(rec.Body.Bytes(), &body))
+	assert.Equal(t, testProblemID, body.Result.ProblemId)
+	assert.Equal(t, "Open", body.Result.Status)
+}
+
+func TestProblemsController_GetAIHelp(t *testing.T) {
+	tests := []struct {
+		name           string
+		problemID      string
+		omitUserID     bool
+		mockSetup      func(m *interactorMock.MockProblemsInteractorInputPort)
+		expectedStatus int
+	}{
+		{
+			name:      "success",
+			problemID: testProblemID,
+			mockSetup: func(m *interactorMock.MockProblemsInteractorInputPort) {
+				m.EXPECT().GetAIHelp(gomock.Any(), "user-1", testProblemID).
+					Return(entities.AIHelp{Concept: "hashmaps", Nudge: "n", Approach: "a", Walkthrough: "w"}, nil)
+			},
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name:           "missing user_id — 401",
+			problemID:      testProblemID,
+			omitUserID:     true,
+			mockSetup:      func(m *interactorMock.MockProblemsInteractorInputPort) {},
+			expectedStatus: http.StatusUnauthorized,
+		},
+		{
+			name:           "id isn't a uuid — 400",
+			problemID:      "problem-1",
+			mockSetup:      func(m *interactorMock.MockProblemsInteractorInputPort) {},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name:      "problem not found — 404",
+			problemID: testProblemID,
+			mockSetup: func(m *interactorMock.MockProblemsInteractorInputPort) {
+				m.EXPECT().GetAIHelp(gomock.Any(), "user-1", testProblemID).
+					Return(entities.AIHelp{}, response.NewProblemNotFound(errors.New("not found")))
+			},
+			expectedStatus: http.StatusNotFound,
+		},
+		{
+			name:      "interactor error propagates",
+			problemID: testProblemID,
+			mockSetup: func(m *interactorMock.MockProblemsInteractorInputPort) {
+				m.EXPECT().GetAIHelp(gomock.Any(), "user-1", testProblemID).
+					Return(entities.AIHelp{}, response.NewInternalError(errors.New("claude call failed")))
+			},
+			expectedStatus: http.StatusInternalServerError,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			mockInteractor := interactorMock.NewMockProblemsInteractorInputPort(ctrl)
+			tt.mockSetup(mockInteractor)
+
+			e := newTestEcho()
+			controller := NewProblemsController(mockInteractor)
+			e.GET("/problems/:id/help", controller.GetAIHelp)
+
+			req := httptest.NewRequest(http.MethodGet, "/problems/"+tt.problemID+"/help", nil)
+			if !tt.omitUserID {
+				req = withUserID(req, "user-1")
+			}
+			rec := httptest.NewRecorder()
+			e.ServeHTTP(rec, req)
+
+			assert.Equal(t, tt.expectedStatus, rec.Code)
+		})
+	}
+}
+
+func TestProblemsController_GetAIHelp_ResponseShape(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockInteractor := interactorMock.NewMockProblemsInteractorInputPort(ctrl)
+	mockInteractor.EXPECT().GetAIHelp(gomock.Any(), "user-1", testProblemID).
+		Return(entities.AIHelp{Concept: "hashmaps", Nudge: "n", Approach: "a", Walkthrough: "w"}, nil)
+
+	e := newTestEcho()
+	controller := NewProblemsController(mockInteractor)
+	e.GET("/problems/:id/help", controller.GetAIHelp)
+
+	req := httptest.NewRequest(http.MethodGet, "/problems/"+testProblemID+"/help", nil)
+	req = withUserID(req, "user-1")
+	rec := httptest.NewRecorder()
+	e.ServeHTTP(rec, req)
+
+	assert.Equal(t, http.StatusOK, rec.Code)
+
+	var body map[string]any
+	assert.NoError(t, json.Unmarshal(rec.Body.Bytes(), &body))
+	assert.NotContains(t, body, "problem_id", "problem_id is redundant here — the caller already has it from the path")
+
+	var help response.AIHelp
+	assert.NoError(t, json.Unmarshal(rec.Body.Bytes(), &help))
+	assert.Equal(t, "hashmaps", help.Concept)
+	assert.Equal(t, "n", help.Nudge)
+	assert.Equal(t, "a", help.Approach)
+	assert.Equal(t, "w", help.Walkthrough)
+}

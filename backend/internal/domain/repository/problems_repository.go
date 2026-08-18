@@ -122,3 +122,18 @@ func (repository *ProblemsRepository) GetTodaysproblem(ctx context.Context, user
 	problem.Status = deriveProblemStatus(problem.Submissions)
 	return
 }
+
+func (repository *ProblemsRepository) UpdateProblemWithAIHelp(ctx context.Context, userId string, problemId string, aiHelp string) (err error) {
+	logger.Info("ProblemsRepository: UpdateProblemWithAIHelp")
+	db := tx.ExtractTx(ctx)
+	if db == nil {
+		db = repository.db
+	}
+
+	err = db.Model(&entities.Problems{}).Where("problem_id = ? and user_id = ?", problemId, userId).Update("ai_help", aiHelp).Error
+	if err != nil {
+		err = response.NewDatabaseError(err)
+		return
+	}
+	return
+}

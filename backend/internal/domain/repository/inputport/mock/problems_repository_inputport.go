@@ -100,3 +100,17 @@ func (mr *MockProblemsRepositoryInputPortMockRecorder) GetTodaysproblem(ctx, use
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTodaysproblem", reflect.TypeOf((*MockProblemsRepositoryInputPort)(nil).GetTodaysproblem), ctx, userId, todaysDate)
 }
+
+// UpdateProblemWithAIHelp mocks base method.
+func (m *MockProblemsRepositoryInputPort) UpdateProblemWithAIHelp(ctx context.Context, userId, problemId, aiHelp string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateProblemWithAIHelp", ctx, userId, problemId, aiHelp)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateProblemWithAIHelp indicates an expected call of UpdateProblemWithAIHelp.
+func (mr *MockProblemsRepositoryInputPortMockRecorder) UpdateProblemWithAIHelp(ctx, userId, problemId, aiHelp any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateProblemWithAIHelp", reflect.TypeOf((*MockProblemsRepositoryInputPort)(nil).UpdateProblemWithAIHelp), ctx, userId, problemId, aiHelp)
+}

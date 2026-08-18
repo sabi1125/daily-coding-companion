@@ -73,6 +73,7 @@ func (r *IngestRunner) Ingest(ctx context.Context, userIds []string, retried boo
 		}
 	}
 
+	logger.Info("ingest ended!")
 	return nil
 }
 
