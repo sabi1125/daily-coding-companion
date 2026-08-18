@@ -114,6 +114,13 @@ func verifyProblemOwnership(problem entities.Problems, userId string) error {
 	return nil
 }
 
+func aiHelpIsComplete(aiHelp entities.AIHelp) bool {
+	return aiHelp.Concept != "" &&
+		aiHelp.Nudge != "" &&
+		aiHelp.Approach != "" &&
+		aiHelp.Walkthrough != ""
+}
+
 func (interactor *ProblemsInteractor) GetAIHelp(ctx context.Context, userId string, problemId string) (aiHelp entities.AIHelp, err error) {
 	logger.Info("ProblemInteractor: GetAIHelp")
 
@@ -212,16 +219,28 @@ Do not include a full working solution or runnable code anywhere in the response
 		return
 	}
 
+	found := false
 	for _, block := range message.Content {
 		toolUse := block.AsToolUse()
 		if toolUse.Name != extractHelpTool {
 			continue
 		}
+		found = true
 
 		if unmarshalErr := json.Unmarshal(toolUse.Input, &aiHelp); unmarshalErr != nil {
 			err = response.NewInternalError(unmarshalErr)
 			return
 		}
+	}
+
+	if !found {
+		err = response.NewInternalError(errors.New("claude did not call the get_ai_help tool"))
+		return
+	}
+
+	if !aiHelpIsComplete(aiHelp) {
+		err = response.NewInternalError(errors.New("claude returned an incomplete ai help response"))
+		return
 	}
 
 	return
