@@ -140,3 +140,37 @@ func (controller *ProblemsController) GetTodaysProblem(c echo.Context) error {
 		},
 	})
 }
+
+func (controller *ProblemsController) GetAIHelp(c echo.Context) error {
+	logger.Info("ProblemsController: GetAIHelp")
+
+	ctx := c.Request().Context()
+	userId := middleware.UserIDFromContext(ctx)
+	if userId == "" {
+		err := response.NewUnauthorized(errors.New("invalid user"))
+		return err
+	}
+
+	var params entities.GetProblemDetailParams
+	if err := c.Bind(&params); err != nil {
+		err = response.NewBadRequest(err)
+		return err
+	}
+
+	if err := validator.ValidateStruct(&params); err != nil {
+		err = response.NewBadRequest(err)
+		return err
+	}
+
+	aiHelp, err := controller.problemsInteractor.GetAIHelp(ctx, userId, params.ProblemId)
+	if err != nil {
+		return err
+	}
+
+	return c.JSON(http.StatusOK, response.AIHelp{
+		Concept:     aiHelp.Concept,
+		Nudge:       aiHelp.Nudge,
+		Approach:    aiHelp.Approach,
+		Walkthrough: aiHelp.Walkthrough,
+	})
+}

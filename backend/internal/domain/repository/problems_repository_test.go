@@ -4,9 +4,11 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"regexp"
 	"testing"
 	"time"
 
+	"backend/internal/domain/entities"
 	"backend/internal/response"
 
 	"github.com/DATA-DOG/go-sqlmock"
@@ -206,6 +208,182 @@ func TestProblemsRepository_GetProblemDetails(t *testing.T) {
 			} else {
 				assert.NoError(t, err)
 				assert.Equal(t, tt.problemId, problem.ProblemId)
+			}
+			assert.NoError(t, mock.ExpectationsWereMet())
+		})
+	}
+}
+
+func TestProblemsRepository_CreateProblem(t *testing.T) {
+	input := &entities.Problems{
+		ProblemId:  "p-1",
+		UserId:     "user-1",
+		RawProblem: "raw problem text",
+	}
+
+	tests := []struct {
+		name      string
+		wantErr   bool
+		setupMock func(mock sqlmock.Sqlmock)
+	}{
+		{
+			name: "inserts successfully",
+			setupMock: func(mock sqlmock.Sqlmock) {
+				mock.ExpectBegin()
+				mock.ExpectExec(regexp.QuoteMeta("INSERT INTO `problems`")).
+					WillReturnResult(sqlmock.NewResult(1, 1))
+				mock.ExpectCommit()
+			},
+		},
+		{
+			name:    "returns a database error when insert fails",
+			wantErr: true,
+			setupMock: func(mock sqlmock.Sqlmock) {
+				mock.ExpectBegin()
+				mock.ExpectExec(regexp.QuoteMeta("INSERT INTO `problems`")).
+					WillReturnError(errors.New("db connection lost"))
+				mock.ExpectRollback()
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			db, mock, cleanup := setupMockDB(t)
+			defer cleanup()
+
+			tt.setupMock(mock)
+
+			repo := NewProblemsRepository(db)
+			err := repo.CreateProblem(context.Background(), input)
+
+			if tt.wantErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+			assert.NoError(t, mock.ExpectationsWereMet())
+		})
+	}
+}
+
+func TestProblemsRepository_GetTodaysproblem(t *testing.T) {
+	todaysDate := time.Date(2026, 8, 18, 0, 0, 0, 0, time.UTC)
+
+	tests := []struct {
+		name       string
+		wantErr    bool
+		wantId     string
+		wantStatus string
+		setupMock  func(mock sqlmock.Sqlmock)
+	}{
+		{
+			name:       "returns today's problem with derived status from its submissions",
+			wantId:     "p-1",
+			wantStatus: "Solved",
+			setupMock: func(mock sqlmock.Sqlmock) {
+				mock.ExpectQuery("SELECT .*problems.* FROM .problems. JOIN ingest_runs").
+					WithArgs("user-1", todaysDate, 1).
+					WillReturnRows(sqlmock.NewRows([]string{"problem_id", "user_id"}).
+						AddRow("p-1", "user-1"))
+
+				mock.ExpectQuery("SELECT \\* FROM .submitted_solutions.").
+					WithArgs("p-1").
+					WillReturnRows(sqlmock.NewRows([]string{"solution_id", "problem_id", "status"}).
+						AddRow("s-1", "p-1", "Solved"))
+			},
+		},
+		{
+			name: "no problem for today returns the zero value, not an error",
+			setupMock: func(mock sqlmock.Sqlmock) {
+				mock.ExpectQuery("SELECT .*problems.* FROM .problems. JOIN ingest_runs").
+					WithArgs("user-1", todaysDate, 1).
+					WillReturnRows(sqlmock.NewRows([]string{"problem_id", "user_id"}))
+			},
+		},
+		{
+			name:    "returns error on unexpected db failure",
+			wantErr: true,
+			setupMock: func(mock sqlmock.Sqlmock) {
+				mock.ExpectQuery("SELECT .*problems.* FROM .problems. JOIN ingest_runs").
+					WithArgs("user-1", todaysDate, 1).
+					WillReturnError(errors.New("db connection lost"))
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			db, mock, cleanup := setupMockDB(t)
+			defer cleanup()
+
+			tt.setupMock(mock)
+
+			repo := NewProblemsRepository(db)
+			problem, err := repo.GetTodaysproblem(context.Background(), "user-1", todaysDate)
+
+			if tt.wantErr {
+				assert.Error(t, err)
+				assert.NoError(t, mock.ExpectationsWereMet())
+				return
+			}
+
+			assert.NoError(t, err)
+			assert.Equal(t, tt.wantId, problem.ProblemId)
+			if tt.wantId != "" {
+				assert.Equal(t, tt.wantStatus, problem.Status)
+			}
+			assert.NoError(t, mock.ExpectationsWereMet())
+		})
+	}
+}
+
+func TestProblemsRepository_UpdateProblemWithAIHelp(t *testing.T) {
+	tests := []struct {
+		name      string
+		wantErr   bool
+		setupMock func(mock sqlmock.Sqlmock)
+	}{
+		{
+			name: "updates ai_help successfully",
+			setupMock: func(mock sqlmock.Sqlmock) {
+				mock.ExpectBegin()
+				mock.ExpectExec(regexp.QuoteMeta("UPDATE `problems` SET")).
+					WithArgs(`{"concept":"c"}`, sqlmock.AnyArg(), "problem-1", "user-1").
+					WillReturnResult(sqlmock.NewResult(0, 1))
+				mock.ExpectCommit()
+			},
+		},
+		{
+			name:    "returns a database error when update fails",
+			wantErr: true,
+			setupMock: func(mock sqlmock.Sqlmock) {
+				mock.ExpectBegin()
+				mock.ExpectExec(regexp.QuoteMeta("UPDATE `problems` SET")).
+					WithArgs(`{"concept":"c"}`, sqlmock.AnyArg(), "problem-1", "user-1").
+					WillReturnError(errors.New("db connection lost"))
+				mock.ExpectRollback()
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			db, mock, cleanup := setupMockDB(t)
+			defer cleanup()
+
+			tt.setupMock(mock)
+
+			repo := NewProblemsRepository(db)
+			err := repo.UpdateProblemWithAIHelp(context.Background(), "user-1", "problem-1", `{"concept":"c"}`)
+
+			if tt.wantErr {
+				var appErr *response.AppError
+				if assert.ErrorAs(t, err, &appErr) {
+					assert.Equal(t, http.StatusInternalServerError, appErr.Status.Code)
+				}
+			} else {
+				assert.NoError(t, err)
 			}
 			assert.NoError(t, mock.ExpectationsWereMet())
 		})
