@@ -13,6 +13,7 @@ import (
 	entities "backend/internal/domain/entities"
 	context "context"
 	reflect "reflect"
+	time "time"
 
 	gomock "go.uber.org/mock/gomock"
 )
@@ -42,31 +43,31 @@ func (m *MockSettingsInteractorInputPort) EXPECT() *MockSettingsInteractorInputP
 }
 
 // GetUserSetting mocks base method.
-func (m *MockSettingsInteractorInputPort) GetUserSetting(ctx context.Context, userId string) (entities.Settings, error) {
+func (m *MockSettingsInteractorInputPort) GetUserSetting(ctx context.Context, userId string, sessionCreatedAt time.Time) (entities.Settings, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetUserSetting", ctx, userId)
+	ret := m.ctrl.Call(m, "GetUserSetting", ctx, userId, sessionCreatedAt)
 	ret0, _ := ret[0].(entities.Settings)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetUserSetting indicates an expected call of GetUserSetting.
-func (mr *MockSettingsInteractorInputPortMockRecorder) GetUserSetting(ctx, userId any) *gomock.Call {
+func (mr *MockSettingsInteractorInputPortMockRecorder) GetUserSetting(ctx, userId, sessionCreatedAt any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserSetting", reflect.TypeOf((*MockSettingsInteractorInputPort)(nil).GetUserSetting), ctx, userId)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserSetting", reflect.TypeOf((*MockSettingsInteractorInputPort)(nil).GetUserSetting), ctx, userId, sessionCreatedAt)
 }
 
 // UpdateUserSetting mocks base method.
-func (m *MockSettingsInteractorInputPort) UpdateUserSetting(ctx context.Context, userId, preference string) (entities.Settings, error) {
+func (m *MockSettingsInteractorInputPort) UpdateUserSetting(ctx context.Context, userId, preference string, sessionCreatedAt time.Time) (entities.Settings, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateUserSetting", ctx, userId, preference)
+	ret := m.ctrl.Call(m, "UpdateUserSetting", ctx, userId, preference, sessionCreatedAt)
 	ret0, _ := ret[0].(entities.Settings)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // UpdateUserSetting indicates an expected call of UpdateUserSetting.
-func (mr *MockSettingsInteractorInputPortMockRecorder) UpdateUserSetting(ctx, userId, preference any) *gomock.Call {
+func (mr *MockSettingsInteractorInputPortMockRecorder) UpdateUserSetting(ctx, userId, preference, sessionCreatedAt any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateUserSetting", reflect.TypeOf((*MockSettingsInteractorInputPort)(nil).UpdateUserSetting), ctx, userId, preference)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateUserSetting", reflect.TypeOf((*MockSettingsInteractorInputPort)(nil).UpdateUserSetting), ctx, userId, preference, sessionCreatedAt)
 }

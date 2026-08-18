@@ -2,12 +2,15 @@ package interactor
 
 import (
 	"context"
+	"time"
 
 	"backend/internal/domain/entities"
 	"backend/internal/domain/repository/inputport"
 	logger "backend/internal/log"
 	"backend/internal/tx"
 )
+
+const gmailTokenLifetime = 7 * 24 * time.Hour
 
 type SettingsInteractor struct {
 	settingRepository inputport.SettingsRepositoryInputPort
@@ -22,7 +25,7 @@ func NewSettingsInteractor(settingsInteractor inputport.SettingsRepositoryInputP
 	}
 }
 
-func (interactor *SettingsInteractor) GetUserSetting(ctx context.Context, userId string) (setting entities.Settings, err error) {
+func (interactor *SettingsInteractor) GetUserSetting(ctx context.Context, userId string, sessionCreatedAt time.Time) (setting entities.Settings, err error) {
 	logger.Info("SettingsInteractor: GetUserSetting")
 
 	setting, err = interactor.settingRepository.GetUserSetting(ctx, userId)
@@ -30,10 +33,12 @@ func (interactor *SettingsInteractor) GetUserSetting(ctx context.Context, userId
 		return
 	}
 
+	setting.NeedsReauth = time.Since(sessionCreatedAt) > gmailTokenLifetime
+
 	return
 }
 
-func (interactor *SettingsInteractor) UpdateUserSetting(ctx context.Context, userId string, preferences string) (setting entities.Settings, err error) {
+func (interactor *SettingsInteractor) UpdateUserSetting(ctx context.Context, userId string, preferences string, sessionCreatedAt time.Time) (setting entities.Settings, err error) {
 	logger.Info("SettingsInteractor: UpdateUserSetting")
 
 	err = interactor.txManager.WithinTransaction(ctx, func(ctx context.Context) error {
@@ -51,6 +56,8 @@ func (interactor *SettingsInteractor) UpdateUserSetting(ctx context.Context, use
 	if err != nil {
 		return
 	}
+
+	setting.NeedsReauth = time.Since(sessionCreatedAt) > gmailTokenLifetime
 
 	return
 }

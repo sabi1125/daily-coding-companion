@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"testing"
+	"time"
 
 	"backend/internal/domain/entities"
 	inputportMock "backend/internal/domain/repository/inputport/mock"
@@ -21,18 +22,31 @@ func TestSettingsInteractor_GetUserSetting(t *testing.T) {
 	errRepo := response.NewDatabaseError(errors.New("repository call failed"))
 
 	tests := []struct {
-		name        string
-		prepareFunc func(msr *inputportMock.MockSettingsRepositoryInputPort)
-		wantedError error
+		name             string
+		sessionCreatedAt time.Time
+		prepareFunc      func(msr *inputportMock.MockSettingsRepositoryInputPort)
+		wantedError      error
+		wantNeedsReauth  bool
 	}{
 		{
-			name: "success",
+			name:             "success, session within 7 days — not needing reauth",
+			sessionCreatedAt: time.Now().Add(-1 * time.Hour),
 			prepareFunc: func(msr *inputportMock.MockSettingsRepositoryInputPort) {
 				msr.EXPECT().GetUserSetting(gomock.Any(), testUserId).Return(testSetting, nil)
 			},
+			wantNeedsReauth: false,
 		},
 		{
-			name: "fails to get setting",
+			name:             "session older than 7 days — needs reauth",
+			sessionCreatedAt: time.Now().Add(-8 * 24 * time.Hour),
+			prepareFunc: func(msr *inputportMock.MockSettingsRepositoryInputPort) {
+				msr.EXPECT().GetUserSetting(gomock.Any(), testUserId).Return(testSetting, nil)
+			},
+			wantNeedsReauth: true,
+		},
+		{
+			name:             "fails to get setting",
+			sessionCreatedAt: time.Now(),
 			prepareFunc: func(msr *inputportMock.MockSettingsRepositoryInputPort) {
 				msr.EXPECT().GetUserSetting(gomock.Any(), testUserId).Return(entities.Settings{}, errRepo)
 			},
@@ -50,7 +64,7 @@ func TestSettingsInteractor_GetUserSetting(t *testing.T) {
 
 			interactor := NewSettingsInteractor(mockSettings, nil)
 
-			setting, err := interactor.GetUserSetting(ctx, testUserId)
+			setting, err := interactor.GetUserSetting(ctx, testUserId, tt.sessionCreatedAt)
 
 			if tt.wantedError != nil {
 				assert.EqualError(t, err, tt.wantedError.Error())
@@ -58,7 +72,7 @@ func TestSettingsInteractor_GetUserSetting(t *testing.T) {
 			}
 
 			assert.NoError(t, err)
-			assert.Equal(t, testSetting, setting)
+			assert.Equal(t, tt.wantNeedsReauth, setting.NeedsReauth)
 		})
 	}
 }
@@ -112,7 +126,7 @@ func TestSettingsInteractor_UpdateUserSetting(t *testing.T) {
 
 			interactor := NewSettingsInteractor(mockSettings, mockTx)
 
-			setting, err := interactor.UpdateUserSetting(ctx, testUserId, testPreferences)
+			setting, err := interactor.UpdateUserSetting(ctx, testUserId, testPreferences, time.Now())
 
 			if tt.wantedError != nil {
 				assert.EqualError(t, err, tt.wantedError.Error())

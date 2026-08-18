@@ -24,6 +24,8 @@ func TestMain(m *testing.M) {
 }
 
 func TestAuth(t *testing.T) {
+	sessionCreatedAt := time.Now().Add(-3 * 24 * time.Hour).Truncate(time.Second)
+
 	tests := []struct {
 		name           string
 		omitCookie     bool
@@ -39,6 +41,7 @@ func TestAuth(t *testing.T) {
 				m.EXPECT().GetSessionById(gomock.Any(), "session-1").Return(&entities.Sessions{
 					SessionId: "session-1",
 					UserId:    "user-1",
+					CreatedAt: sessionCreatedAt,
 					ExpiresAt: time.Now().Add(time.Hour),
 				}, nil)
 			},
@@ -93,10 +96,12 @@ func TestAuth(t *testing.T) {
 			e.HTTPErrorHandler = response.ErrorHandler
 
 			var gotUserID string
+			var gotSessionCreatedAt time.Time
 			nextCalled := false
 			handler := func(c echo.Context) error {
 				nextCalled = true
 				gotUserID = UserIDFromContext(c.Request().Context())
+				gotSessionCreatedAt = SessionCreatedAtFromContext(c.Request().Context())
 				return c.NoContent(http.StatusOK)
 			}
 			e.GET("/protected", handler, Auth(mockSessions))
@@ -112,6 +117,7 @@ func TestAuth(t *testing.T) {
 			assert.Equal(t, tt.wantNext, nextCalled)
 			if tt.wantNext {
 				assert.Equal(t, "user-1", gotUserID)
+				assert.True(t, sessionCreatedAt.Equal(gotSessionCreatedAt))
 			}
 		})
 	}
@@ -122,4 +128,12 @@ func TestUserIDFromContext(t *testing.T) {
 	assert.Equal(t, "user-1", UserIDFromContext(ctx))
 
 	assert.Empty(t, UserIDFromContext(context.Background()))
+}
+
+func TestSessionCreatedAtFromContext(t *testing.T) {
+	createdAt := time.Now().Add(-24 * time.Hour)
+	ctx := context.WithValue(context.Background(), SessionCreatedAtKey, createdAt)
+	assert.True(t, createdAt.Equal(SessionCreatedAtFromContext(ctx)))
+
+	assert.True(t, SessionCreatedAtFromContext(context.Background()).IsZero())
 }

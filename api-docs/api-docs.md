@@ -401,6 +401,14 @@ Get's help for a problem that the user is stuck in using Claude AI which generat
 **Summary**
 Gets users setting.
 
+**Description**
+
+`needs_reauth` is computed from `session.created_at + 7 days < now` — session creation and
+Gmail refresh-token issuance always happen at the same instant (`AuthInteractor.Callback`),
+and sessions are never silently renewed, so session age stands in for token age without an
+extra lookup. See `DECISIONS.md` D1 for why the token expires every ~7 days in the first
+place. This is a heuristic, not a real-time token check.
+
 **Auth** — Required
 
 **Cookie** - session.session_id
@@ -412,7 +420,8 @@ Gets users setting.
 ```json
 {
     "setting_id": "04aec174-bf72-457b-bc0a-5075f953de22",
-    "get_help_preferences": "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since 1966, when designers at Letraset and James Mosley, the librarian at St Bride Printing Library in London, took a 1914 Cicero translation and scrambled it to make dummy text for Letraset's Body Type sheets."
+    "get_help_preferences": "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since 1966, when designers at Letraset and James Mosley, the librarian at St Bride Printing Library in London, took a 1914 Cicero translation and scrambled it to make dummy text for Letraset's Body Type sheets.",
+    "needs_reauth": false
 }
 ```
 
@@ -451,7 +460,8 @@ Updates users setting.
 ```json
 {
     "setting_id": "04aec174-bf72-457b-bc0a-5075f953de22",
-    "get_help_preferences": "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since 1966, when designers at Letraset and James Mosley, the librarian at St Bride Printing Library in London, took a 1914 Cicero translation and scrambled it to make dummy text for Letraset's Body Type sheets."
+    "get_help_preferences": "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since 1966, when designers at Letraset and James Mosley, the librarian at St Bride Printing Library in London, took a 1914 Cicero translation and scrambled it to make dummy text for Letraset's Body Type sheets.",
+    "needs_reauth": false
 }
 ```
 

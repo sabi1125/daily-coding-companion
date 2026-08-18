@@ -14,7 +14,10 @@ import (
 
 type ctxKey string
 
-const UserIDKey ctxKey = "user_id"
+const (
+	UserIDKey           ctxKey = "user_id"
+	SessionCreatedAtKey ctxKey = "session_created_at"
+)
 
 func Auth(sessionsRepository inputport.SessionsRepositoryInputPort) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
@@ -35,6 +38,7 @@ func Auth(sessionsRepository inputport.SessionsRepositoryInputPort) echo.Middlew
 			}
 
 			ctx := context.WithValue(c.Request().Context(), UserIDKey, session.UserId)
+			ctx = context.WithValue(ctx, SessionCreatedAtKey, session.CreatedAt)
 			c.SetRequest(c.Request().WithContext(ctx))
 
 			return next(c)
@@ -45,4 +49,9 @@ func Auth(sessionsRepository inputport.SessionsRepositoryInputPort) echo.Middlew
 func UserIDFromContext(ctx context.Context) string {
 	userId, _ := ctx.Value(UserIDKey).(string)
 	return userId
+}
+
+func SessionCreatedAtFromContext(ctx context.Context) time.Time {
+	createdAt, _ := ctx.Value(SessionCreatedAtKey).(time.Time)
+	return createdAt
 }

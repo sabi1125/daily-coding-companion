@@ -35,7 +35,7 @@ func TestSettingsController_GetUserSettings(t *testing.T) {
 		{
 			name: "success — returns setting",
 			mockSetup: func(m *interactorMock.MockSettingsInteractorInputPort) {
-				m.EXPECT().GetUserSetting(gomock.Any(), "user-1").Return(entities.Settings{SettingID: "setting-1"}, nil)
+				m.EXPECT().GetUserSetting(gomock.Any(), "user-1", gomock.Any()).Return(entities.Settings{SettingID: "setting-1"}, nil)
 			},
 			expectedStatus: http.StatusOK,
 		},
@@ -48,9 +48,17 @@ func TestSettingsController_GetUserSettings(t *testing.T) {
 		{
 			name: "unexpected error",
 			mockSetup: func(m *interactorMock.MockSettingsInteractorInputPort) {
-				m.EXPECT().GetUserSetting(gomock.Any(), "user-1").Return(entities.Settings{}, response.NewDatabaseError(errors.New("db down")))
+				m.EXPECT().GetUserSetting(gomock.Any(), "user-1", gomock.Any()).Return(entities.Settings{}, response.NewDatabaseError(errors.New("db down")))
 			},
 			expectedStatus: http.StatusInternalServerError,
+		},
+		{
+			name: "session older than 7 days — needs_reauth true in response",
+			mockSetup: func(m *interactorMock.MockSettingsInteractorInputPort) {
+				m.EXPECT().GetUserSetting(gomock.Any(), "user-1", gomock.Any()).
+					Return(entities.Settings{SettingID: "setting-1", NeedsReauth: true}, nil)
+			},
+			expectedStatus: http.StatusOK,
 		},
 	}
 
@@ -89,7 +97,7 @@ func TestSettingsController_UpdateUserSettings(t *testing.T) {
 			name: "success — updates setting",
 			body: `{"get_help_preferences":"new preferences"}`,
 			mockSetup: func(m *interactorMock.MockSettingsInteractorInputPort) {
-				m.EXPECT().UpdateUserSetting(gomock.Any(), "user-1", "new preferences").
+				m.EXPECT().UpdateUserSetting(gomock.Any(), "user-1", "new preferences", gomock.Any()).
 					Return(entities.Settings{SettingID: "setting-1"}, nil)
 			},
 			expectedStatus: http.StatusOK,
@@ -110,7 +118,7 @@ func TestSettingsController_UpdateUserSettings(t *testing.T) {
 			name: "unexpected error",
 			body: `{"get_help_preferences":"new preferences"}`,
 			mockSetup: func(m *interactorMock.MockSettingsInteractorInputPort) {
-				m.EXPECT().UpdateUserSetting(gomock.Any(), "user-1", "new preferences").
+				m.EXPECT().UpdateUserSetting(gomock.Any(), "user-1", "new preferences", gomock.Any()).
 					Return(entities.Settings{}, response.NewDatabaseError(errors.New("db down")))
 			},
 			expectedStatus: http.StatusInternalServerError,

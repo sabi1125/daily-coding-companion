@@ -34,7 +34,9 @@ func (controller *SettingsController) GetUserSettings(c echo.Context) error {
 		return err
 	}
 
-	setting, err := controller.settingsInteractor.GetUserSetting(ctx, userId)
+	sessionCreatedAt := middleware.SessionCreatedAtFromContext(ctx)
+
+	setting, err := controller.settingsInteractor.GetUserSetting(ctx, userId, sessionCreatedAt)
 	if err != nil {
 		return err
 	}
@@ -42,6 +44,7 @@ func (controller *SettingsController) GetUserSettings(c echo.Context) error {
 	res := &entities.Settings{
 		SettingID:          setting.SettingID,
 		GetHelpPreferences: setting.GetHelpPreferences,
+		NeedsReauth:        setting.NeedsReauth,
 	}
 
 	return c.JSON(http.StatusOK, res)
@@ -68,7 +71,9 @@ func (controller *SettingsController) UpdateUserSettings(c echo.Context) error {
 		return err
 	}
 
-	setting, err := controller.settingsInteractor.UpdateUserSetting(ctx, userId, updateSettingBody.GetHelpPreferences)
+	sessionCreatedAt := middleware.SessionCreatedAtFromContext(ctx)
+
+	setting, err := controller.settingsInteractor.UpdateUserSetting(ctx, userId, updateSettingBody.GetHelpPreferences, sessionCreatedAt)
 	if err != nil {
 		return err
 	}
@@ -76,6 +81,7 @@ func (controller *SettingsController) UpdateUserSettings(c echo.Context) error {
 	res := &entities.Settings{
 		SettingID:          setting.SettingID,
 		GetHelpPreferences: setting.GetHelpPreferences,
+		NeedsReauth:        setting.NeedsReauth,
 	}
 	return c.JSON(http.StatusOK, res)
 }
