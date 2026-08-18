@@ -104,11 +104,14 @@ ingest-run diagram for the full shape.
 ## Get Help
 
 Single button, single AI call, single cached response. Clicking "Get Help" generates one
-structured response (nudge → approach → walkthrough → full solution, all sections in one
-response) — never a separate call per hint level. Every response also explains the
-underlying concept/technique, not just the specific problem — that's a fixed part of the
-base prompt, not optional. Nothing is generated unless the button is clicked, and once
-generated it's cached on the `problems` row — reopening the problem later costs nothing.
+structured response (concept → nudge → approach → walkthrough, all sections in one
+response) — never a separate call per hint level, and never a full working solution. The
+walkthrough is a prose talk-through of how to get there, not drop-in code — handing over a
+finished solution defeats the point of the user figuring it out themselves. Every response
+also explains the underlying concept/technique, not just the specific problem — that's a
+fixed part of the base prompt, not optional. Nothing is generated unless the button is
+clicked, and once generated it's cached on the `problems` row — reopening the problem later
+costs nothing.
 
 **Preferences are additive, not a replacement.** A user can save free-text Get Help
 preferences in Settings (e.g. "explain more simply," "skip the walkthrough") — appended to
