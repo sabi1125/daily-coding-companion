@@ -6,6 +6,7 @@ import (
 	"backend/cmd/ingest"
 	"backend/internal/config"
 	"backend/internal/infrastructure"
+	"backend/internal/infrastructure/middleware"
 	"backend/internal/log"
 	"backend/internal/response"
 	"backend/internal/validator"
@@ -40,6 +41,7 @@ func main() {
 	// Create an Echo instance
 	e := echo.New()
 	e.HTTPErrorHandler = response.ErrorHandler
+	e.Use(middleware.CORS())
 	e.Use(logger.MiddlewareLogger(logger.Get()))
 	infrastructure.Router(e, db)
 
