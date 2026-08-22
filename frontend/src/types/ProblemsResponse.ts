@@ -9,7 +9,7 @@ export type StatusType = typeof Status[keyof typeof Status]
 
 export interface Problem {
   problem_id: string,
-  title: string,
+  title: string | null,
   status: StatusType,
   needs_review_flag: boolean,
   created_at: string

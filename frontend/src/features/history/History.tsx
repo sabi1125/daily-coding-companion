@@ -73,7 +73,7 @@ function History() {
 
       { /* history table */}
 
-      <section className="max-h-128 overflow-y-auto [scrollbar:none] [&::-webkit-scrollbar]:hidden flex flex-col">
+      <section className="max-h-128 overflow-y-auto scrollbar-none flex flex-col">
         {hasProblems ? problems!.result.map(p => (
           // when problems exist
           <section key={p.problem_id} className="border-b border-border-faint py-5 flex flex-row justify-between" >
