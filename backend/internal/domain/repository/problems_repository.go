@@ -137,3 +137,27 @@ func (repository *ProblemsRepository) UpdateProblemWithAIHelp(ctx context.Contex
 	}
 	return
 }
+
+func (repository *ProblemsRepository) GetProblemsCount(ctx context.Context, userId string) (problemStateCount entities.ProblemStateCount, err error) {
+	logger.Infof("ProblemsRepository: GetProblemsCount")
+	db := tx.ExtractTx(ctx)
+	if db == nil {
+		db = repository.db
+	}
+
+	selectClause := `
+		COUNT(DISTINCT CASE WHEN s.status = ? THEN p.problem_id END) AS solved,
+		COUNT(DISTINCT p.problem_id) - COUNT(DISTINCT CASE WHEN s.status = ? THEN p.problem_id END) AS unsolved
+	`
+
+	err = db.Table("problems AS p").
+		Select(selectClause, string(entities.ProblemSolved), string(entities.ProblemSolved)).
+		Joins("LEFT JOIN submitted_solutions AS s ON s.problem_id = p.problem_id").
+		Where("p.user_id = ?", userId).
+		Scan(&problemStateCount).Error
+	if err != nil {
+		return entities.ProblemStateCount{}, response.NewDatabaseError(err)
+	}
+
+	return
+}

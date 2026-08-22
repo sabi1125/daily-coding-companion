@@ -409,6 +409,8 @@ and sessions are never silently renewed, so session age stands in for token age 
 extra lookup. See `DECISIONS.md` D1 for why the token expires every ~7 days in the first
 place. This is a heuristic, not a real-time token check.
 
+`email` and counts `solved_count` and `unsolved_count` are taken from `users` table and `problem` table.
+
 **Auth** — Required
 
 **Cookie** - session.session_id
@@ -420,6 +422,9 @@ place. This is a heuristic, not a real-time token check.
 ```json
 {
     "setting_id": "04aec174-bf72-457b-bc0a-5075f953de22",
+    "email": "sabirbara@gmail.com",
+    "solved_count": 18,
+    "unsolved_count": 8,
     "get_help_preferences": "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since 1966, when designers at Letraset and James Mosley, the librarian at St Bride Printing Library in London, took a 1914 Cicero translation and scrambled it to make dummy text for Letraset's Body Type sheets.",
     "needs_reauth": false
 }

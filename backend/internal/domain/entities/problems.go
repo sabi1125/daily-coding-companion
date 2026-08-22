@@ -41,3 +41,8 @@ type AIHelp struct {
 	Approach    string `json:"approach" jsonschema:"required,description=The strategy/algorithm to use, described in plain language"`
 	Walkthrough string `json:"walkthrough" jsonschema:"required,description=A prose talk-through of how to apply the approach to this problem's inputs, step by step — not a full working solution or runnable code"`
 }
+
+type ProblemStateCount struct {
+	Solved   int64 `json:"solved" gorm:"solved"`
+	Unsolved int64 `json:"unsolved" gorm:"unsolved"`
+}

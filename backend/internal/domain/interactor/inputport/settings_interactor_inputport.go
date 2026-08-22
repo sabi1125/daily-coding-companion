@@ -9,6 +9,6 @@ import (
 )
 
 type SettingsInteractorInputPort interface {
-	GetUserSetting(ctx context.Context, userId string, sessionCreatedAt time.Time) (setting entities.Settings, err error)
+	GetUserSetting(ctx context.Context, userId string, sessionCreatedAt time.Time) (setting entities.Settings, problemStateCount entities.ProblemStateCount, email string, err error)
 	UpdateUserSetting(ctx context.Context, userId string, preference string, sessionCreatedAt time.Time) (setting entities.Settings, err error)
 }

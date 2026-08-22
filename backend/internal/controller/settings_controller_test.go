@@ -3,6 +3,7 @@ package controller
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"net/http"
 	"net/http/httptest"
@@ -31,13 +32,22 @@ func TestSettingsController_GetUserSettings(t *testing.T) {
 		omitUserID     bool
 		mockSetup      func(m *interactorMock.MockSettingsInteractorInputPort)
 		expectedStatus int
+		wantBody       *response.SettingResponse
 	}{
 		{
 			name: "success — returns setting",
 			mockSetup: func(m *interactorMock.MockSettingsInteractorInputPort) {
-				m.EXPECT().GetUserSetting(gomock.Any(), "user-1", gomock.Any()).Return(entities.Settings{SettingID: "setting-1"}, nil)
+				m.EXPECT().GetUserSetting(gomock.Any(), "user-1", gomock.Any()).
+					Return(entities.Settings{SettingID: "setting-1"}, entities.ProblemStateCount{Solved: 3, Unsolved: 2}, "test@example.com", nil)
 			},
 			expectedStatus: http.StatusOK,
+			wantBody: &response.SettingResponse{
+				SettingId:     "setting-1",
+				Email:         "test@example.com",
+				SolvedCount:   3,
+				UnsolvedCount: 2,
+				NeedsReauth:   false,
+			},
 		},
 		{
 			name:           "when user id is missing",
@@ -48,7 +58,8 @@ func TestSettingsController_GetUserSettings(t *testing.T) {
 		{
 			name: "unexpected error",
 			mockSetup: func(m *interactorMock.MockSettingsInteractorInputPort) {
-				m.EXPECT().GetUserSetting(gomock.Any(), "user-1", gomock.Any()).Return(entities.Settings{}, response.NewDatabaseError(errors.New("db down")))
+				m.EXPECT().GetUserSetting(gomock.Any(), "user-1", gomock.Any()).
+					Return(entities.Settings{}, entities.ProblemStateCount{}, "", response.NewDatabaseError(errors.New("db down")))
 			},
 			expectedStatus: http.StatusInternalServerError,
 		},
@@ -56,9 +67,14 @@ func TestSettingsController_GetUserSettings(t *testing.T) {
 			name: "session older than 7 days — needs_reauth true in response",
 			mockSetup: func(m *interactorMock.MockSettingsInteractorInputPort) {
 				m.EXPECT().GetUserSetting(gomock.Any(), "user-1", gomock.Any()).
-					Return(entities.Settings{SettingID: "setting-1", NeedsReauth: true}, nil)
+					Return(entities.Settings{SettingID: "setting-1", NeedsReauth: true}, entities.ProblemStateCount{}, "test@example.com", nil)
 			},
 			expectedStatus: http.StatusOK,
+			wantBody: &response.SettingResponse{
+				SettingId:   "setting-1",
+				Email:       "test@example.com",
+				NeedsReauth: true,
+			},
 		},
 	}
 
@@ -82,6 +98,12 @@ func TestSettingsController_GetUserSettings(t *testing.T) {
 			e.ServeHTTP(rec, req)
 
 			assert.Equal(t, tt.expectedStatus, rec.Code)
+
+			if tt.wantBody != nil {
+				var got response.SettingResponse
+				assert.NoError(t, json.Unmarshal(rec.Body.Bytes(), &got))
+				assert.Equal(t, *tt.wantBody, got)
+			}
 		})
 	}
 }

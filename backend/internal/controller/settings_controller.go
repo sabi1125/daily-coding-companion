@@ -36,13 +36,16 @@ func (controller *SettingsController) GetUserSettings(c echo.Context) error {
 
 	sessionCreatedAt := middleware.SessionCreatedAtFromContext(ctx)
 
-	setting, err := controller.settingsInteractor.GetUserSetting(ctx, userId, sessionCreatedAt)
+	setting, problemStateCount, email, err := controller.settingsInteractor.GetUserSetting(ctx, userId, sessionCreatedAt)
 	if err != nil {
 		return err
 	}
 
-	res := &entities.Settings{
-		SettingID:          setting.SettingID,
+	res := response.SettingResponse{
+		SettingId:          setting.SettingID,
+		Email:              email,
+		SolvedCount:        problemStateCount.Solved,
+		UnsolvedCount:      problemStateCount.Unsolved,
 		GetHelpPreferences: setting.GetHelpPreferences,
 		NeedsReauth:        setting.NeedsReauth,
 	}
