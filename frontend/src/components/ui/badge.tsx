@@ -20,6 +20,10 @@ const badgeVariants = cva(
           "hover:bg-muted hover:text-muted-foreground dark:hover:bg-muted/50",
         disabled: "rounded-sm px-2 py-1 text-xs font-medium bg-secondary text-muted-foreground",
         link: "text-primary underline-offset-4 hover:underline",
+        review: "border-transparent bg-status-review text-status-review-foreground rounded-sm",
+        open: "border-transparent bg-status-open text-status-open-foreground rounded-sm",
+        failed: "border-transparent bg-status-failed text-status-failed-foreground rounded-sm",
+        solved: "border-transparent bg-status-solved text-status-solved-foreground rounded-sm",
       },
     },
     defaultVariants: {

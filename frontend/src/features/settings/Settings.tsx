@@ -10,7 +10,7 @@ import { useEffect, useState } from "react"
 async function getSetting(): Promise<SettingResponse> {
   // TODO: Needs error handling after implemented
   const res = await api.get<SettingResponse>("/settings");
-  return res.data;
+  return res.data
 }
 
 async function patchSetting(pref: string) {
