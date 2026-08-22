@@ -14,18 +14,26 @@ const gmailTokenLifetime = 7 * 24 * time.Hour
 
 type SettingsInteractor struct {
 	settingRepository inputport.SettingsRepositoryInputPort
-
-	txManager tx.Manager
+	userRepository    inputport.UsersRepositoryInputPort
+	problemRepository inputport.ProblemsRepositoryInputPort
+	txManager         tx.Manager
 }
 
-func NewSettingsInteractor(settingsInteractor inputport.SettingsRepositoryInputPort, txManager tx.Manager) *SettingsInteractor {
+func NewSettingsInteractor(
+	settingsInteractor inputport.SettingsRepositoryInputPort,
+	userRepository inputport.UsersRepositoryInputPort,
+	problemRepository inputport.ProblemsRepositoryInputPort,
+	txManager tx.Manager,
+) *SettingsInteractor {
 	return &SettingsInteractor{
 		settingRepository: settingsInteractor,
+		userRepository:    userRepository,
+		problemRepository: problemRepository,
 		txManager:         txManager,
 	}
 }
 
-func (interactor *SettingsInteractor) GetUserSetting(ctx context.Context, userId string, sessionCreatedAt time.Time) (setting entities.Settings, err error) {
+func (interactor *SettingsInteractor) GetUserSetting(ctx context.Context, userId string, sessionCreatedAt time.Time) (setting entities.Settings, problemStateCount entities.ProblemStateCount, email string, err error) {
 	logger.Info("SettingsInteractor: GetUserSetting")
 
 	setting, err = interactor.settingRepository.GetUserSetting(ctx, userId)
@@ -34,6 +42,18 @@ func (interactor *SettingsInteractor) GetUserSetting(ctx context.Context, userId
 	}
 
 	setting.NeedsReauth = time.Since(sessionCreatedAt) > gmailTokenLifetime
+
+	problemStateCount, err = interactor.problemRepository.GetProblemsCount(ctx, userId)
+	if err != nil {
+		return
+	}
+
+	user, err := interactor.userRepository.GetUser(ctx, userId)
+	if err != nil {
+		return
+	}
+
+	email = user.Email
 
 	return
 }

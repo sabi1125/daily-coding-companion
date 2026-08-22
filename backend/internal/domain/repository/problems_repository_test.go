@@ -389,3 +389,60 @@ func TestProblemsRepository_UpdateProblemWithAIHelp(t *testing.T) {
 		})
 	}
 }
+
+func TestProblemsRepository_GetProblemsCount(t *testing.T) {
+	tests := []struct {
+		name         string
+		wantErr      bool
+		setupMock    func(mock sqlmock.Sqlmock)
+		wantSolved   int64
+		wantUnsolved int64
+	}{
+		{
+			name: "returns solved and unsolved counts",
+			setupMock: func(mock sqlmock.Sqlmock) {
+				mock.ExpectQuery("SELECT (.|\n)*FROM problems AS p LEFT JOIN submitted_solutions AS s ON s.problem_id = p.problem_id WHERE p.user_id = .").
+					WithArgs("Solved", "Solved", "user-1").
+					WillReturnRows(sqlmock.NewRows([]string{"solved", "unsolved"}).
+						AddRow(3, 2))
+			},
+			wantSolved:   3,
+			wantUnsolved: 2,
+		},
+		{
+			name:    "returns a database error when the query fails",
+			wantErr: true,
+			setupMock: func(mock sqlmock.Sqlmock) {
+				mock.ExpectQuery("SELECT (.|\n)*FROM problems AS p LEFT JOIN submitted_solutions AS s ON s.problem_id = p.problem_id WHERE p.user_id = .").
+					WithArgs("Solved", "Solved", "user-1").
+					WillReturnError(errors.New("db connection lost"))
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			db, mock, cleanup := setupMockDB(t)
+			defer cleanup()
+
+			tt.setupMock(mock)
+
+			repo := NewProblemsRepository(db)
+			problemStateCount, err := repo.GetProblemsCount(context.Background(), "user-1")
+
+			if tt.wantErr {
+				var appErr *response.AppError
+				if assert.ErrorAs(t, err, &appErr) {
+					assert.Equal(t, http.StatusInternalServerError, appErr.Status.Code)
+				}
+				assert.NoError(t, mock.ExpectationsWereMet())
+				return
+			}
+
+			assert.NoError(t, err)
+			assert.Equal(t, tt.wantSolved, problemStateCount.Solved)
+			assert.Equal(t, tt.wantUnsolved, problemStateCount.Unsolved)
+			assert.NoError(t, mock.ExpectationsWereMet())
+		})
+	}
+}

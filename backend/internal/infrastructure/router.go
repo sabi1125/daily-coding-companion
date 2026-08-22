@@ -54,7 +54,7 @@ func Router(e *echo.Echo, db *gorm.DB) {
 	// routes
 	RegisteredHealthRouter(e, db)
 	RegisteredAuthRoutes(e, db, userRepository, oauthRepository, settingRepository, sessionRepository, *googleCfg, googleOauthCfg, uuidGenerator, txManager)
-	RegisteredSettingsRoutes(e, db, sessionRepository, txManager)
+	RegisteredSettingsRoutes(e, db, sessionRepository, userRepository, problemRepository, txManager)
 	RegisteredProblemsRoutes(e, db, problemRepository, sessionRepository, ingestRunner, ingestRepository, settingRepository, claudeClient)
 	RegisteredSubmittedSolutionsRoutes(e, db, sessionRepository, problemRepository, uuidGenerator, txManager)
 }
@@ -103,12 +103,14 @@ func RegisteredSettingsRoutes(
 	e *echo.Echo,
 	db *gorm.DB,
 	sessionRepository *repository.SessionsRepository,
+	userRepository *repository.UsersRepository,
+	problemRepository *repository.ProblemsRepository,
 	txManager tx.Manager,
 ) {
 	settings := e.Group("/settings")
 	settings.Use(middleware.Auth(sessionRepository))
 	repository := repository.NewSettingsRepository(db)
-	interactor := interactor.NewSettingsInteractor(repository, txManager)
+	interactor := interactor.NewSettingsInteractor(repository, userRepository, problemRepository, txManager)
 	controller := controller.NewSettingsController(interactor)
 
 	settings.GET("", controller.GetUserSettings)
