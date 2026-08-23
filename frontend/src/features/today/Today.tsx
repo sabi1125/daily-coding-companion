@@ -156,7 +156,7 @@ function Today() {
       {/* problem details */}
 
       <h2 className="text-2xl font-semibold text-foreground">{problem.title}</h2>
-      <p className="text-base text-muted-foreground">{problem.problem_text}</p>
+      <p className="text-base text-muted-foreground whitespace-pre-line">{problem.problem_text}</p>
       <h3 className="font-semibold text-sm">Submit an attempt</h3>
 
       {/* editor */}

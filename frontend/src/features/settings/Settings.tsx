@@ -22,7 +22,7 @@ async function patchSetting(pref: string) {
 
 
 function Settings() {
-  const [setting, setSettings] = useState<SettingResponse | null>(null)
+  const [setting, setSettings] = useState<SettingResponse | undefined>(undefined)
   const [pref, setPref] = useState<string>()
 
   useEffect(() => {
