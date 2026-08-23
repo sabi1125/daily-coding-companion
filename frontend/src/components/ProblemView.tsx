@@ -23,7 +23,7 @@ import { codeEditorTheme } from "@/lib/codeMirrorTheme";
 import { go } from "@codemirror/lang-go"
 import { ToggleGroup } from "@/components/ui/toggle-group"
 import { ToggleGroupItem } from "@/components/ui/toggle-group";
-import type { Submission } from "@/types/Submissons";
+import type { SubmissionRequest } from "@/types/Submissons";
 import { useNavigate } from "react-router-dom";
 
 type LanguageType = "javascript" | "python" | "cpp" | "go"
@@ -34,7 +34,7 @@ async function getHelp(problemId: string): Promise<AiHelp> {
 }
 
 async function postSolution(problemId: string, solution: string, status: string) {
-  const req: Submission = {
+  const req: SubmissionRequest = {
     solution: solution,
     status: status
   }

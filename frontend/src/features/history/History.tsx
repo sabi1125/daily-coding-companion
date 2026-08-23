@@ -7,6 +7,7 @@ import { EmptyState } from "@/components/ui/empty-state"
 import { Badge } from "@/components/ui/badge"
 import ResolveBadgeVariant from "@/util/badgeResolver"
 import { useNavigate } from "react-router-dom"
+import DateToString from "@/util/dateToString"
 
 async function getUserProblems(status: string): Promise<ProblemResponse> {
   if (status == "All") {
@@ -14,18 +15,6 @@ async function getUserProblems(status: string): Promise<ProblemResponse> {
   }
   const res = await api.get(`/problems?status=${status}`)
   return res.data
-}
-
-
-function dateToString(date: string): string {
-  const dateObj = new Date(date)
-  const formattedDate = dateObj.toLocaleDateString("en-US", {
-    month: "short", // "Aug"
-    day: "numeric", // "21"
-    year: "numeric", // "2026"
-  });
-
-  return formattedDate
 }
 
 function History() {
@@ -99,7 +88,7 @@ function History() {
               {p.needs_review_flag ? <Badge variant={"review"}>Review</Badge> : null}
             </div>
             <div className="flex flex-row gap-2">
-              <p className="text-xs text-text-faint">{dateToString(p.created_at)}</p>
+              <p className="text-xs text-text-faint">{DateToString(p.created_at)}</p>
               <Badge variant={ResolveBadgeVariant(p.status)} className="">{p.status}</Badge>
             </div>
           </section>
