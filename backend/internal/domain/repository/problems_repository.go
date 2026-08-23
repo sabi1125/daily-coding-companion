@@ -74,7 +74,7 @@ func (repository *ProblemsRepository) GetProblemDetails(ctx context.Context, use
 	if db == nil {
 		db = repository.db
 	}
-	if err = db.Where("user_id = ? and problem_id = ?", userId, problemId).Take(&problem).Error; err != nil {
+	if err = db.Where("user_id = ? and problem_id = ?", userId, problemId).Preload("Submissions").Take(&problem).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			err = response.NewProblemNotFound(err)
 			return
@@ -82,6 +82,7 @@ func (repository *ProblemsRepository) GetProblemDetails(ctx context.Context, use
 		err = response.NewDatabaseError(err)
 		return
 	}
+	problem.Status = deriveProblemStatus(problem.Submissions)
 	return
 }
 

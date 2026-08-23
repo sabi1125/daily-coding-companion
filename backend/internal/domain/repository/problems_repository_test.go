@@ -146,12 +146,13 @@ func TestProblemsRepository_GetProblems(t *testing.T) {
 
 func TestProblemsRepository_GetProblemDetails(t *testing.T) {
 	tests := []struct {
-		name      string
-		userId    string
-		problemId string
-		wantErr   bool
-		wantCode  int
-		setupMock func(mock sqlmock.Sqlmock)
+		name       string
+		userId     string
+		problemId  string
+		wantErr    bool
+		wantCode   int
+		wantStatus string
+		setupMock  func(mock sqlmock.Sqlmock)
 	}{
 		{
 			name:      "returns the matching problem",
@@ -162,7 +163,13 @@ func TestProblemsRepository_GetProblemDetails(t *testing.T) {
 					WithArgs("user-1", "problem-1", 1).
 					WillReturnRows(sqlmock.NewRows([]string{"problem_id", "user_id", "title"}).
 						AddRow("problem-1", "user-1", "Two Sum"))
+
+				mock.ExpectQuery("SELECT \\* FROM .submitted_solutions.").
+					WithArgs("problem-1").
+					WillReturnRows(sqlmock.NewRows([]string{"solution_id", "problem_id", "status"}).
+						AddRow("s1", "problem-1", "Solved"))
 			},
+			wantStatus: "Solved",
 		},
 		{
 			name:      "returns 404 when no matching problem",
@@ -208,6 +215,7 @@ func TestProblemsRepository_GetProblemDetails(t *testing.T) {
 			} else {
 				assert.NoError(t, err)
 				assert.Equal(t, tt.problemId, problem.ProblemId)
+				assert.Equal(t, tt.wantStatus, problem.Status)
 			}
 			assert.NoError(t, mock.ExpectationsWereMet())
 		})

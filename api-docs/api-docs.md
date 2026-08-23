@@ -305,6 +305,7 @@ Gets a problem whose id is `path_param.id = problems.problem_id`.
       "problem_text": "Given an array of integers `nums` and an integer `target`, return indices of the two numbers such that they add up to `target`. You may assume that each input would have exactly one solution, and you may not use the same element twice.",
       "algorithm_tag": "Hash Table",
       "difficulty": "Easy",
+      "status": "Open",
       "ai_help": "Consider using a hash map to store each number's complement as you iterate through the array to achieve O(n) time complexity.",
       "needs_review_flag": false,
       "created_at": "2026-08-10T14:30:00Z",
