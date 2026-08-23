@@ -22,6 +22,7 @@ type ProblemDetail struct {
 	ProblemText     *string   `json:"problem_text"`
 	AlgorithmTag    *string   `json:"algorithm_tag"`
 	Difficulty      *string   `json:"difficulty"`
+	Status          string    `json:"status"`
 	AiHelp          *string   `json:"ai_help"`
 	NeedsReviewFlag bool      `json:"needs_review_flag"`
 	CreatedAt       time.Time `json:"created_at"`

@@ -229,7 +229,7 @@ func TestProblemsController_GetProblemDetail_ResponseShape(t *testing.T) {
 			ProblemId:  testProblemID,
 			RawProblem: "raw text",
 			Title:      &title,
-			Status:     "Open", // must not leak into the response
+			Status:     "Open",
 		}, nil)
 
 	e := newTestEcho()
@@ -246,13 +246,13 @@ func TestProblemsController_GetProblemDetail_ResponseShape(t *testing.T) {
 	var body map[string]any
 	assert.NoError(t, json.Unmarshal(rec.Body.Bytes(), &body))
 	assert.NotContains(t, body, "result", "detail response must be a bare object, not wrapped")
-	assert.NotContains(t, body, "status", "status is not part of this endpoint's response")
 
 	var detail response.ProblemDetail
 	assert.NoError(t, json.Unmarshal(rec.Body.Bytes(), &detail))
 	assert.Equal(t, testProblemID, detail.ProblemId)
 	assert.Equal(t, "raw text", detail.RawProblem)
 	assert.Equal(t, &title, detail.Title)
+	assert.Equal(t, "Open", detail.Status)
 }
 
 func TestProblemsController_GetTodaysProblem(t *testing.T) {

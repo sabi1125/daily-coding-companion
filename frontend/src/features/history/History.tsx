@@ -1,11 +1,13 @@
 import { ToggleGroupItem } from "@/components/ui/toggle-group"
 import { ToggleGroup } from "@/components/ui/toggle-group"
-import { type ProblemResponse } from "@/types/ProblemsResponse"
+import { type ProblemResponse } from "@/types/Problems"
 import { useEffect, useState } from "react"
 import api from "@/lib/api"
 import { EmptyState } from "@/components/ui/empty-state"
 import { Badge } from "@/components/ui/badge"
 import ResolveBadgeVariant from "@/util/badgeResolver"
+import { useNavigate } from "react-router-dom"
+import DateToString from "@/util/dateToString"
 
 async function getUserProblems(status: string): Promise<ProblemResponse> {
   if (status == "All") {
@@ -15,18 +17,9 @@ async function getUserProblems(status: string): Promise<ProblemResponse> {
   return res.data
 }
 
-function dateToString(date: string): string {
-  const dateObj = new Date(date)
-  const formattedDate = dateObj.toLocaleDateString("en-US", {
-    month: "short", // "Aug"
-    day: "numeric", // "21"
-    year: "numeric", // "2026"
-  });
-
-  return formattedDate
-}
-
 function History() {
+
+  const navigate = useNavigate()
 
   const [problems, setProblems] = useState<ProblemResponse | null>()
   const [status, setStatus] = useState<string>("All")
@@ -85,13 +78,17 @@ function History() {
       <section className="max-h-128 overflow-y-auto scrollbar-none flex flex-col">
         {hasProblems ? problems.result.map(p => (
           // when problems exist
-          <section key={p.problem_id} className="border-b border-border-faint py-5 flex flex-row justify-between" >
+          <section
+            key={p.problem_id}
+            className="border-b border-border-faint py-5 flex flex-row justify-between cursor-pointer"
+            onClick={() => navigate(`/history/${p.problem_id}`)}
+          >
             <div className="flex flex-row rounded-lg items-center gap-3">
               <h2 className="font-medium">{p.title}</h2>
               {p.needs_review_flag ? <Badge variant={"review"}>Review</Badge> : null}
             </div>
             <div className="flex flex-row gap-2">
-              <p className="text-xs text-text-faint">{dateToString(p.created_at)}</p>
+              <p className="text-xs text-text-faint">{DateToString(p.created_at)}</p>
               <Badge variant={ResolveBadgeVariant(p.status)} className="">{p.status}</Badge>
             </div>
           </section>

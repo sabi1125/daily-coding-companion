@@ -102,6 +102,7 @@ func (controller *ProblemsController) GetProblemDetail(c echo.Context) error {
 		ProblemText:     problem.ProblemText,
 		AlgorithmTag:    problem.AlgorithmTag,
 		Difficulty:      problem.Difficulty,
+		Status:          problem.Status,
 		AiHelp:          problem.AiHelp,
 		NeedsReviewFlag: problem.NeedsReviewFlag,
 		CreatedAt:       problem.CreatedAt,

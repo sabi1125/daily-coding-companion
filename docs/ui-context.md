@@ -67,18 +67,20 @@ Primary screen, default landing point once signed in.
 - Every problem stays visible permanently regardless of status — nothing is ever removed
   (`REQUIREMENTS.md`, Working a problem) — so this list only grows, never needs an "archived"
   distinction.
-- Clicking a row opens Screen 3 (Problem detail) as a popup — see below.
+- Clicking a row navigates to Screen 3 (Problem detail) — see below.
 
-## Screen 3 — Problem detail (popup, not a route)
+## Screen 3 — Problem detail (`/history/:id`)
 
-Opened from a click on a History row, closes back to History. Not addressable by its own
-URL — same content reused for today's problem and any past problem (`design.md`: Screens).
+Opened from a click on a History row, a "Back to History" link returns to `/history`. A
+full page, not a popup — a popup made writing a full solution attempt cramped/awkward.
+Addressable by its own URL — same content reused for today's problem and any past problem
+(`design.md`: Screens).
 
 - Full problem content (same fields as Screen 1).
-- Full attempt history for this problem — every submission (notes/solution, self-reported
+- Full attempt history for this problem — every submission (solution, self-reported
   outcome, timestamp), not just the most recent (`REQUIREMENTS.md`: Attempt = "one submission
-  ... a problem can have many attempts over time"). Past solutions render read-only in the
-  same syntax-highlighted editor as Screen 1, not plain text.
+  ... a problem can have many attempts over time"). Past solutions render read-only — plain
+  text is fine, syntax highlighting isn't required since nothing is being edited.
 - Get Help button / cached response, same behavior as Screen 1.
 - Can be submitted against again at any time until solved — no extra action needed to
   "reopen" it (`REQUIREMENTS.md`, Working a problem).
