@@ -76,11 +76,6 @@ func (controller *SubmittedSolutionsController) SubmitSolutions(c echo.Context) 
 		return err
 	}
 
-	// BindPathParams, not c.Bind, for the path id: echo.DefaultBinder.Bind
-	// always also attempts a body bind regardless of the target struct's
-	// tags, so a second c.Bind call below would read an already-drained
-	// request body. BindPathParams only reads c.ParamNames()/ParamValues(),
-	// no body I/O.
 	var params entities.SubmitSolutionsParam
 	if err := (&echo.DefaultBinder{}).BindPathParams(c, &params); err != nil {
 		err = response.NewBadRequest(err)

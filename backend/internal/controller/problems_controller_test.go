@@ -337,10 +337,10 @@ func TestProblemsController_GetTodaysProblem_ResponseShape(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, rec.Code)
 
-	var body response.TodaysProblemResponse
+	var body response.TodaysProblem
 	assert.NoError(t, json.Unmarshal(rec.Body.Bytes(), &body))
-	assert.Equal(t, testProblemID, body.Result.ProblemId)
-	assert.Equal(t, "Open", body.Result.Status)
+	assert.Equal(t, testProblemID, body.ProblemId)
+	assert.Equal(t, "Open", body.Status)
 }
 
 func TestProblemsController_GetAIHelp(t *testing.T) {

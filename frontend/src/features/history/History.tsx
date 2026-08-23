@@ -5,6 +5,7 @@ import { useEffect, useState } from "react"
 import api from "@/lib/api"
 import { Badge, badgeVariants } from "@/components/ui/badge"
 import type { VariantProps } from "class-variance-authority"
+import { EmptyState } from "@/components/ui/empty-state"
 
 async function getUserProblems(status: string): Promise<ProblemResponse> {
   if (status == "All") {
@@ -87,13 +88,11 @@ function History() {
             </div>
           </section>
         )) :
-          <section className="flex flex-col justify-center items-center w-full h-100 text-center">
-            {/* when there are no problems */}
-            <h3 className="font-bold p-2">No problems yet</h3>
-            <p className="text-text-faint w-90 p-1 text-sm">
-              Once your first daily problem is ingested, it'll show up here.
-            </p>
-          </section>
+          <EmptyState
+            className="w-full h-100"
+            title="No problems yet"
+            description="Once your first daily problem is ingested, it'll show up here."
+          />
         }
       </section>
     </div >
