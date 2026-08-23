@@ -42,10 +42,6 @@ type TodaysProblem struct {
 	UpdatedAt       time.Time `json:"updated_at"`
 }
 
-type TodaysProblemResponse struct {
-	Result TodaysProblem `json:"result"`
-}
-
 type AIHelp struct {
 	Concept     string `json:"concept"`
 	Nudge       string `json:"nudge"`

@@ -4,6 +4,7 @@ import type { SettingResponse, PatchSettingRequest } from "@/types/SettingRespon
 import api from "@/lib/api"
 import { env } from "@/lib/env"
 import { useEffect, useState } from "react"
+import { EmptyState } from "@/components/ui/empty-state"
 
 // TODO: needs loading spinners after implemented
 
@@ -21,12 +22,27 @@ async function patchSetting(pref: string) {
 
 
 function Settings() {
-  const [setting, setSettings] = useState<SettingResponse | null>(null)
+  const [setting, setSettings] = useState<SettingResponse | undefined>(undefined)
   const [pref, setPref] = useState<string>()
 
   useEffect(() => {
     getSetting().then(s => { setSettings(s); setPref(s.get_help_preferences ?? "") })
   }, [])
+
+  if (setting === undefined) {
+    return <p>Loading..</p>
+  }
+
+  if (setting === null) {
+    return (
+      <EmptyState
+        className="min-h-[70vh]"
+        title="No problem today"
+        description="This refreshes automatically — check back tomorrow."
+      />
+    )
+  }
+
 
   return (
     <div className="mx-auto w-full max-w-2xl px-10 py-14 flex flex-col gap-8">

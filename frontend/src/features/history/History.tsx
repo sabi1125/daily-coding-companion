@@ -3,8 +3,9 @@ import { ToggleGroup } from "@/components/ui/toggle-group"
 import { type ProblemResponse } from "@/types/ProblemsResponse"
 import { useEffect, useState } from "react"
 import api from "@/lib/api"
-import { Badge, badgeVariants } from "@/components/ui/badge"
-import type { VariantProps } from "class-variance-authority"
+import { EmptyState } from "@/components/ui/empty-state"
+import { Badge } from "@/components/ui/badge"
+import ResolveBadgeVariant from "@/util/badgeResolver"
 
 async function getUserProblems(status: string): Promise<ProblemResponse> {
   if (status == "All") {
@@ -25,12 +26,6 @@ function dateToString(date: string): string {
   return formattedDate
 }
 
-function resolveBadgeVariant(status: string): VariantProps<typeof badgeVariants>["variant"] {
-  if (status === "Solved") return "solved"
-  if (status === "Failed") return "failed"
-  return "open"
-}
-
 function History() {
 
   const [problems, setProblems] = useState<ProblemResponse | null>()
@@ -44,7 +39,21 @@ function History() {
     })
   }, [status])
 
-  const hasProblems = (problems?.result.length ?? 0) > 0
+  if (problems === undefined) {
+    return <p>Loading..</p>
+  }
+
+  if (problems === null) {
+    return (
+      <EmptyState
+        className="min-h-[70vh]"
+        title="No problems here"
+        description="There is no history. Once a problem has been ingested the problem's history will be shown here."
+      />
+    )
+  }
+
+  const hasProblems = (problems.result.length ?? 0) > 0
 
   return (
     <div className="mx-auto w-full max-w-3xl px-10 py-14 flex flex-col gap-8">
@@ -74,7 +83,7 @@ function History() {
       { /* history table */}
 
       <section className="max-h-128 overflow-y-auto scrollbar-none flex flex-col">
-        {hasProblems ? problems!.result.map(p => (
+        {hasProblems ? problems.result.map(p => (
           // when problems exist
           <section key={p.problem_id} className="border-b border-border-faint py-5 flex flex-row justify-between" >
             <div className="flex flex-row rounded-lg items-center gap-3">
@@ -83,17 +92,15 @@ function History() {
             </div>
             <div className="flex flex-row gap-2">
               <p className="text-xs text-text-faint">{dateToString(p.created_at)}</p>
-              <Badge variant={resolveBadgeVariant(p.status)} className="">{p.status}</Badge>
+              <Badge variant={ResolveBadgeVariant(p.status)} className="">{p.status}</Badge>
             </div>
           </section>
         )) :
-          <section className="flex flex-col justify-center items-center w-full h-100 text-center">
-            {/* when there are no problems */}
-            <h3 className="font-bold p-2">No problems yet</h3>
-            <p className="text-text-faint w-90 p-1 text-sm">
-              Once your first daily problem is ingested, it'll show up here.
-            </p>
-          </section>
+          <EmptyState
+            className="w-full h-100"
+            title={`No ${status === "All" ? "" : status} problem yet`}
+            description={`Once there is a ${status === "All" ? "" : status} problem  it will show up here.`}
+          />
         }
       </section>
     </div >

@@ -175,19 +175,17 @@ Get's the problem that was generated that day in the following format.
 
 ```json
 {
-    "result" : {
-          "problem_id": "c39a04db-e00b-426b-9e4a-9b8e2cb29a10",
-          "raw_problem": "Given an array of integers nums and an integer target, return indices of the two numbers such that they add up to target.",
-          "title": "Two Sum",
-          "problem_text": "Given an array of integers `nums` and an integer `target`, return indices of the two numbers such that they add up to `target`. You may assume that each input would have exactly one solution, and you may not use the same element twice.",
-          "algorithm_tag": "Hash Table",
-          "difficulty": "Easy",
-          "status": "Open",
-          "ai_help": "Consider using a hash map to store each number's complement as you iterate through the array to achieve O(n) time complexity.",
-          "needs_review_flag": false,
-          "created_at": "2026-08-10T14:30:00Z",
-          "updated_at": "2026-08-10T14:35:12Z"
-    }
+  "problem_id": "c39a04db-e00b-426b-9e4a-9b8e2cb29a10",
+  "raw_problem": "Given an array of integers nums and an integer target, return indices of the two numbers such that they add up to target.",
+  "title": "Two Sum",
+  "problem_text": "Given an array of integers `nums` and an integer `target`, return indices of the two numbers such that they add up to `target`. You may assume that each input would have exactly one solution, and you may not use the same element twice.",
+  "algorithm_tag": "Hash Table",
+  "difficulty": "Easy",
+  "status": "Open",
+  "ai_help": "Consider using a hash map to store each number's complement as you iterate through the array to achieve O(n) time complexity.",
+  "needs_review_flag": false,
+  "created_at": "2026-08-10T14:30:00Z",
+  "updated_at": "2026-08-10T14:35:12Z"
 }
 ```
 
