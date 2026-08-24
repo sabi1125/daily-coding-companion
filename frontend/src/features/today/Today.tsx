@@ -3,6 +3,7 @@ import axios from "axios";
 import { type Problem } from "@/types/Problems"
 import { useEffect, useState } from "react"
 import { EmptyState } from "@/components/ui/empty-state"
+import { LoadingSkeleton } from "@/components/ui/loadingSkeleton"
 import ProblemView from "@/components/ProblemView";
 
 async function getTodaysProblem(): Promise<Problem | null> {
@@ -21,12 +22,13 @@ async function getTodaysProblem(): Promise<Problem | null> {
 function Today() {
   const [problem, setProblem] = useState<Problem | null>()
 
+
   useEffect(() => {
     getTodaysProblem().then(s => { setProblem(s) }).catch(() => setProblem(null))
   }, [])
 
   if (problem === undefined) {
-    return <p>Loading...</p>
+    return <LoadingSkeleton />
   }
 
   if (problem === null) {

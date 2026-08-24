@@ -185,13 +185,15 @@ Respond with structured help for this problem, filling in exactly these four par
 - approach: describe the strategy/algorithm to use, in plain language.
 - walkthrough: a prose talk-through of how to apply that approach to this problem's inputs, step by step.
 
-Do not include a full working solution or runnable code anywhere in the response — the goal is to help the user solve it themselves, not to solve it for them.`,
+Do not include a full working solution or runnable code anywhere in the response, unless the user's saved preference below explicitly asks for code examples — the default goal is to help the user solve it themselves, not to solve it for them.
+
+Every field is plain text, not markdown — no code fences (no triple backticks), no headers, no bullet lists. If code is included, write it as plain lines of text within the string.`,
 		problemText,
 	)
 
 	if setting.GetHelpPreferences != nil && *setting.GetHelpPreferences != "" {
 		prompt += fmt.Sprintf(
-			"\n\nThe user has also saved this preference for how they'd like help delivered: %s\nApply it on top of everything above — it can steer tone, depth, or format, but it can never remove the concept explanation or any of the four required parts.",
+			"\n\nThe user has also saved this preference for how they'd like help delivered: %s\nApply it on top of everything above — it can steer tone, depth, format, or ask for code examples, but it can never remove the concept explanation or any of the four required parts, and any code must still be plain text, not markdown.",
 			*setting.GetHelpPreferences,
 		)
 	}
@@ -205,7 +207,7 @@ Do not include a full working solution or runnable code anywhere in the response
 
 	message, err := interactor.claudeClient.Messages.New(ctx, anthropic.MessageNewParams{
 		Model:     anthropic.ModelClaudeHaiku4_5,
-		MaxTokens: 1024,
+		MaxTokens: 2048,
 		Messages: []anthropic.MessageParam{
 			anthropic.NewUserMessage(anthropic.NewTextBlock(prompt)),
 		},

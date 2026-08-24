@@ -14,6 +14,7 @@ import {
   SelectLabel,
 } from "./ui/select"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "./ui/sheet";
+import { LoadingHelp } from "@/components/ui/loadingHelp";
 import { javascript } from "@codemirror/lang-javascript"
 import { python } from "@codemirror/lang-python"
 import { cpp } from "@codemirror/lang-cpp"
@@ -25,6 +26,7 @@ import { ToggleGroup } from "@/components/ui/toggle-group"
 import { ToggleGroupItem } from "@/components/ui/toggle-group";
 import type { SubmissionRequest } from "@/types/Submissons";
 import { useNavigate } from "react-router-dom";
+import { Loader2 } from "lucide-react";
 
 type LanguageType = "javascript" | "python" | "cpp" | "go"
 
@@ -61,6 +63,7 @@ function ProblemView({ problem, isFromHistory }: { problem: Problem, isFromHisto
   const [code, setCode] = useState<LanguageType>("python")
   const [solution, setSolution] = useState<string>()
   const [status, setStatus] = useState<string>("Failed")
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const navigate = useNavigate()
 
@@ -101,6 +104,7 @@ function ProblemView({ problem, isFromHistory }: { problem: Problem, isFromHisto
                 <SheetTitle className="px-10 text-2xl font-semibold">Get Help</SheetTitle>
               </SheetHeader>
               <div className="flex flex-col gap-1 px-15 pb-4 overflow-y-auto">
+                {help === null && <LoadingHelp />}
                 {help && (
                   <>
                     <section className="flex flex-col gap-3 border-b border-border-faint py-6">
@@ -187,12 +191,16 @@ function ProblemView({ problem, isFromHistory }: { problem: Problem, isFromHisto
           >Solved</ToggleGroupItem>
         </ToggleGroup>
         <Button
+          disabled={isSubmitting}
           onClick={
             () => {
-              postSolution(problem.problem_id, solution!, status)
+              setIsSubmitting(true)
+              postSolution(problem.problem_id, solution!, status).finally(() => setIsSubmitting(false))
             }
           }
-          className="py-4 text-xs">Submit attempt</Button>
+          className="py-4 text-xs">
+          {isSubmitting ? <Loader2 className="size-4 animate-spin" /> : "Submit attempt"}
+        </Button>
       </div>
     </div>
   )

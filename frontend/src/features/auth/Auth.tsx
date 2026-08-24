@@ -1,4 +1,5 @@
 import LoginState from "@/components/loginState"
+import { LoadingSkeleton } from "@/components/ui/loadingSkeleton"
 import api from "@/lib/api"
 import Router from "@/router/Router"
 import type { SettingResponse } from "@/types/SettingResponse"
@@ -25,7 +26,7 @@ function Auth() {
   }, [])
 
   if (setting === undefined) {
-    return <p>Loading..</p>
+    return <LoadingSkeleton />
   }
 
   if (setting === null) {
