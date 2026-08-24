@@ -1,8 +1,8 @@
-import Router from './router/Router.tsx'
+import Auth from './features/auth/Auth.tsx'
 
 function App() {
   return (
-    <Router />
+    <Auth />
   )
 }
 

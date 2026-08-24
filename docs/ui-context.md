@@ -14,12 +14,10 @@ spacing doing the hierarchy work rather than color/decoration.
 
 ## Global states that touch every screen
 
-- **Signed-out** — conditional state at `/`, not its own route. Login screen states sign-in
-  is currently limited to approved users (D5) — a visitor who can't sign in sees why, not a
-  dead end.
-- **NeedsReAuth** — distinct from signed-out. Surfaces via a dedicated reconnect prompt, not
-  a banner (D1) — explains what expired (~7-day Google Testing-mode token), why, and the
-  "Reconnect Gmail" action. Also conditional at `/`, not its own route.
+- **Signed-out** and **NeedsReAuth** — both conditional state at `/`, not their own route.
+  Both render the same Login screen (MVP simplification — both cases resolve the same way:
+  hitting `GET /auth/google` again). Login screen states sign-in is currently limited to
+  approved users (D5) — a visitor who can't sign in sees why, not a dead end.
 
 ---
 
