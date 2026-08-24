@@ -14,7 +14,7 @@ import {
   SelectLabel,
 } from "./ui/select"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "./ui/sheet";
-import { LoadingHelp } from "@/components/ui/loadingHelp";
+import { LoadingHelp } from "@/components/ui/loading-help";
 import { javascript } from "@codemirror/lang-javascript"
 import { python } from "@codemirror/lang-python"
 import { cpp } from "@codemirror/lang-cpp"

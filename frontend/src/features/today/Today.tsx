@@ -3,7 +3,7 @@ import axios from "axios";
 import { type Problem } from "@/types/Problems"
 import { useEffect, useState } from "react"
 import { EmptyState } from "@/components/ui/empty-state"
-import { LoadingSkeleton } from "@/components/ui/loadingSkeleton"
+import { LoadingSkeleton } from "@/components/ui/loading-skeleton"
 import ProblemView from "@/components/ProblemView";
 
 async function getTodaysProblem(): Promise<Problem | null> {

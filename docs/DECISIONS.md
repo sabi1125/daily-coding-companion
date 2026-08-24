@@ -128,17 +128,23 @@ once per problem, ever — cached after the first generation).
 | Call | Model | Input tokens (~) | Output tokens (~) | Cost per call |
 |---|---|---|---|---|
 | Ingest parse | Haiku 4.5 | 800 | 250 | **$0.0021** |
-| Get Help | Sonnet 5 (intro) | 1,000 | 1,200 | **$0.014** |
-| Get Help | Opus 4.8 (if used instead) | 1,000 | 1,200 | **$0.035** |
+| Get Help | Sonnet 5 (intro) | 1,000 | 2,048 (cap) | **$0.023** |
+| Get Help | Opus 4.8 (if used instead) | 1,000 | 2,048 (cap) | **$0.056** |
+
+`MaxTokens` for Get Help is 2,048 (raised from 1,024 — the old cap was too tight for longer
+preference-driven responses, e.g. "very detailed" or code examples in the walkthrough, and
+was truncating replies). Cost below assumes the worst case of every response hitting the cap
+— real usage is typically well under it.
 
 ### Monthly estimate (30 days)
 | Scenario | Parse (30 days, Haiku) | Get Help (Sonnet 5) | Total / month |
 |---|---|---|---|
-| Rarely need help (~5 days/month) | $0.06 | $0.07 | **~$0.13** |
-| Need help most days (~20 days/month) | $0.06 | $0.28 | **~$0.34** |
-| Need help every single day | $0.06 | $0.42 | **~$0.48** |
+| Rarely need help (~5 days/month) | $0.06 | $0.12 | **~$0.18** |
+| Need help most days (~20 days/month) | $0.06 | $0.46 | **~$0.52** |
+| Need help every single day | $0.06 | $0.69 | **~$0.75** |
 
-Even worst-case (help every day, Sonnet 5) stays **under $0.50/month**. Opus 4.8 instead of
-Sonnet roughly doubles that, to ~$1/month. Model choice for Get Help (Sonnet vs. Opus) still
-open — a quality call, not cost. Sonnet 5's intro pricing reverts to $3/$15 after
-**2026-08-31** — re-check this estimate if the app is still running past that date.
+Even worst-case (help every day, Sonnet 5, every response hitting the cap) stays **under
+$1/month**. Opus 4.8 instead of Sonnet roughly doubles that. Model choice for Get Help
+(Sonnet vs. Opus) still open — a quality call, not cost. Sonnet 5's intro pricing reverts to
+$3/$15 after **2026-08-31** — re-check this estimate if the app is still running past that
+date.

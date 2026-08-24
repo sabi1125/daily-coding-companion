@@ -1,5 +1,5 @@
 import LoginState from "@/components/loginState"
-import { LoadingSkeleton } from "@/components/ui/loadingSkeleton"
+import { LoadingSkeleton } from "@/components/ui/loading-skeleton"
 import api from "@/lib/api"
 import Router from "@/router/Router"
 import type { SettingResponse } from "@/types/SettingResponse"

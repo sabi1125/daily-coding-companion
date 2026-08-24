@@ -5,7 +5,7 @@ import api from "@/lib/api"
 import { env } from "@/lib/env"
 import { useEffect, useState } from "react"
 import { EmptyState } from "@/components/ui/empty-state"
-import { LoadingSetting } from "@/components/ui/loadingSetting"
+import { LoadingSetting } from "@/components/ui/loading-setting"
 import { Loader2 } from "lucide-react"
 
 

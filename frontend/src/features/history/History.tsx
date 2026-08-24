@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import ResolveBadgeVariant from "@/util/badgeResolver"
 import { useNavigate } from "react-router-dom"
 import DateToString from "@/util/dateToString"
-import { LoadingHistory } from "@/components/ui/loadingHistory"
+import { LoadingHistory } from "@/components/ui/loading-history"
 
 async function getUserProblems(status: string): Promise<ProblemResponse> {
   if (status == "All") {
