@@ -5,8 +5,9 @@ import api from "@/lib/api"
 import { env } from "@/lib/env"
 import { useEffect, useState } from "react"
 import { EmptyState } from "@/components/ui/empty-state"
+import { LoadingSetting } from "@/components/ui/loading-setting"
+import { Loader2 } from "lucide-react"
 
-// TODO: needs loading spinners after implemented
 
 async function getSetting(): Promise<SettingResponse> {
   // TODO: Needs error handling after implemented
@@ -24,13 +25,14 @@ async function patchSetting(pref: string) {
 function Settings() {
   const [setting, setSettings] = useState<SettingResponse | undefined>(undefined)
   const [pref, setPref] = useState<string>()
+  const [isSaving, setIsSaving] = useState(false)
 
   useEffect(() => {
     getSetting().then(s => { setSettings(s); setPref(s.get_help_preferences ?? "") })
   }, [])
 
   if (setting === undefined) {
-    return <p>Loading..</p>
+    return <LoadingSetting />
   }
 
   if (setting === null) {
@@ -135,16 +137,20 @@ function Settings() {
             resize-none"
           placeholder={setting?.get_help_preferences ? setting.get_help_preferences : "e.g. Prefer Python examples. Keep explanations brief."} />
         <Button variant="default"
-          onClick={() => patchSetting(pref ?? "")}
+          disabled={isSaving}
+          onClick={() => {
+            setIsSaving(true)
+            patchSetting(pref ?? "").finally(() => setIsSaving(false))
+          }}
           className="
         text-primary-foreground text-sm
         px-3
         py-4
         w-20
         h-8
-        font-medium 
+        font-medium
             hover:bg-muted hover:text-primary">
-          Save
+          {isSaving ? <Loader2 className="size-4 animate-spin" /> : "Save"}
         </Button>
       </section>
     </div >

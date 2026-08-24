@@ -10,6 +10,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { Badge } from "@/components/ui/badge";
 import { ChevronDown } from "lucide-react";
 import DateToString from "@/util/dateToString";
+import { LoadingSkeleton } from "@/components/ui/loading-skeleton"
 
 async function getProblem(problemId: string): Promise<Problem | null> {
   try {
@@ -50,7 +51,7 @@ function ProblemDetail() {
   }, [id])
 
   if (problem === undefined) {
-    return <p>Loading...</p>
+    return <LoadingSkeleton />
   }
 
   if (problem === null) {
