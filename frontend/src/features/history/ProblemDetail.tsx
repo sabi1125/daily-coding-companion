@@ -1,5 +1,5 @@
 import ProblemView from "@/components/ProblemView";
-import api from "@/lib/api";
+import api, { getErrorMessage } from "@/lib/api";
 import type { Problem } from "@/types/Problems";
 import axios from "axios";
 import { useEffect, useState } from "react";
@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { ChevronDown } from "lucide-react";
 import DateToString from "@/util/dateToString";
 import { LoadingSkeleton } from "@/components/ui/loading-skeleton"
+import { toast } from "sonner";
 
 async function getProblem(problemId: string): Promise<Problem | null> {
   try {
@@ -46,8 +47,8 @@ function ProblemDetail() {
   const hasSubmissions = (submissions?.result.length ?? 0) > 0
 
   useEffect(() => {
-    getProblem(id!).then(s => { setProblem(s) }).catch(() => setProblem(null))
-    getSolutionsForProblem(id!).then(s => { getSubmissions(s) }).catch(() => getSubmissions(null))
+    getProblem(id!).then(s => { setProblem(s) }).catch((err) => { toast.error(getErrorMessage(err, "Couldn't get the problem. Please try again later.")); setProblem(null); })
+    getSolutionsForProblem(id!).then(s => { getSubmissions(s) }).catch((err) => { toast.error(getErrorMessage(err, "Couldn't get the attempt history. Please try again later.")); getSubmissions(null) })
   }, [id])
 
   if (problem === undefined) {

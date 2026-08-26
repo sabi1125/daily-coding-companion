@@ -2,7 +2,7 @@ import type { AiHelp, Problem } from "@/types/Problems";
 import { Badge } from "./ui/badge";
 import ResolveBadgeVariant from "@/util/badgeResolver";
 import { useState } from "react";
-import api from "@/lib/api";
+import api, { getErrorMessage } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -27,6 +27,7 @@ import { ToggleGroupItem } from "@/components/ui/toggle-group";
 import type { SubmissionRequest } from "@/types/Submissons";
 import { useNavigate } from "react-router-dom";
 import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 type LanguageType = "javascript" | "python" | "cpp" | "go"
 
@@ -93,7 +94,11 @@ function ProblemView({ problem, isFromHistory }: { problem: Problem, isFromHisto
             open={helpOpen}
             onOpenChange={(open) => {
               setHelpOpen(open)
-              if (open) { setHelp(null); getHelp(problem.problem_id).then(v => setHelp(v)) }
+              if (open) {
+                setHelp(null);
+                getHelp(problem.problem_id).then(v => setHelp(v))
+                  .catch((err) => { toast.error(getErrorMessage(err, "Couldn't get AI help. Please try again later.")); setHelp(null) })
+              }
             }}
           >
             <SheetTrigger render={<Button size={"xxs"} variant={"outline"} />}>
@@ -195,7 +200,7 @@ function ProblemView({ problem, isFromHistory }: { problem: Problem, isFromHisto
           onClick={
             () => {
               setIsSubmitting(true)
-              postSolution(problem.problem_id, solution!, status).finally(() => setIsSubmitting(false))
+              postSolution(problem.problem_id, solution!, status).then(() => toast.success("Submitted successfully!")).catch((err) => { toast.error(getErrorMessage(err, "Couldn't submit solution. Please try again later.")); }).finally(() => setIsSubmitting(false))
             }
           }
           className="py-4 text-xs">

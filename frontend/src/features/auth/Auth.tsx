@@ -1,10 +1,11 @@
 import LoginState from "@/components/loginState"
 import { LoadingSkeleton } from "@/components/ui/loading-skeleton"
-import api from "@/lib/api"
+import api, { getErrorMessage } from "@/lib/api"
 import Router from "@/router/Router"
 import type { SettingResponse } from "@/types/SettingResponse"
 import axios from "axios"
 import { useEffect, useState } from "react"
+import { toast } from "sonner"
 
 async function getSetting(): Promise<SettingResponse | null> {
   try {
@@ -22,7 +23,7 @@ function Auth() {
   const [setting, setSetting] = useState<SettingResponse | null>()
 
   useEffect(() => {
-    getSetting().then(s => { setSetting(s) }).catch(() => setSetting(null))
+    getSetting().then(s => { setSetting(s) }).catch((err) => { toast.error(getErrorMessage(err, "Couldn't reach the server. Please try again later.")); setSetting(null) })
   }, [])
 
   if (setting === undefined) {

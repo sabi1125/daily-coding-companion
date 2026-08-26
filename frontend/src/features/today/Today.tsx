@@ -1,10 +1,11 @@
-import api from "@/lib/api";
+import api, { getErrorMessage } from "@/lib/api";
 import axios from "axios";
 import { type Problem } from "@/types/Problems"
 import { useEffect, useState } from "react"
 import { EmptyState } from "@/components/ui/empty-state"
 import { LoadingSkeleton } from "@/components/ui/loading-skeleton"
 import ProblemView from "@/components/ProblemView";
+import { toast } from "sonner"
 
 async function getTodaysProblem(): Promise<Problem | null> {
   try {
@@ -24,7 +25,7 @@ function Today() {
 
 
   useEffect(() => {
-    getTodaysProblem().then(s => { setProblem(s) }).catch(() => setProblem(null))
+    getTodaysProblem().then(s => { setProblem(s) }).catch((err) => { toast.error(getErrorMessage(err, "Couldn't load today's problem. Please try again later.")); setProblem(null) })
   }, [])
 
   if (problem === undefined) {
