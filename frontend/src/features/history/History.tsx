@@ -2,13 +2,14 @@ import { ToggleGroupItem } from "@/components/ui/toggle-group"
 import { ToggleGroup } from "@/components/ui/toggle-group"
 import { type ProblemResponse } from "@/types/Problems"
 import { useEffect, useState } from "react"
-import api from "@/lib/api"
+import api, { getErrorMessage } from "@/lib/api"
 import { EmptyState } from "@/components/ui/empty-state"
 import { Badge } from "@/components/ui/badge"
 import ResolveBadgeVariant from "@/util/badgeResolver"
 import { useNavigate } from "react-router-dom"
 import DateToString from "@/util/dateToString"
 import { LoadingHistory } from "@/components/ui/loading-history"
+import { toast } from "sonner"
 
 async function getUserProblems(status: string): Promise<ProblemResponse> {
   if (status == "All") {
@@ -28,9 +29,9 @@ function History() {
   const tabStates = ["All", "Open", "Failed", "Solved"]
 
   useEffect(() => {
-    getUserProblems(status).then(s => {
-      setProblems(s);
-    })
+    getUserProblems(status)
+      .then(s => { setProblems(s) })
+      .catch((err) => { toast.error(getErrorMessage(err, "Couldn't get problems history. Please try again later.")); setProblems(null) })
   }, [status])
 
   if (problems === undefined) {
