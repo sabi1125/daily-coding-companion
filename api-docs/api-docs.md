@@ -577,3 +577,60 @@ Insert's submissions.
 | 404 | Expected | When problem not found, or the problem_id belongs to another user | `{ "message" : "Problem not found" }` |
 | 500 | Operational | Inserting solutions in database failed | `{ "message" : "internal server error" }` |
 
+---
+
+## Run submission API
+
+### `POST /submissions/run`
+
+**Summary**
+Executes submitted code in a sandboxed environment (Piston) and returns the run result.
+
+**Auth** — Required
+
+**Cookie** - session.session_id
+**Content-Type** - application/json
+
+**Request**
+
+```json
+{
+    "language": "python",
+    "content": "num1 = 1\nnum2 = 2\nprint(\"The sum is:\", num1 + num2)"
+}
+```
+
+**Responses**
+
+`200 Success`
+
+```json
+{
+    "language": "python",
+    "version": "3.12.0",
+    "run": {
+        "stdout": "The sum is: 3\n",
+        "stderr": "",
+        "output": "The sum is: 3\n",
+        "code": 0,
+        "signal": null,
+        "cpu_time": 21,
+        "wall_time": 30,
+        "memory": 3564544,
+        "message": null,
+        "status": null
+    }
+}
+```
+
+`compile` is included (non-null) only for compiled languages (e.g. `c++`, `go`) and has the same shape as `run`.
+
+**Errors**
+
+| Status | Category | When | Body |
+|---|---|---|---|
+| 400 | Expected | Missing `language` or `content` | `{ "message" : "Bad Request" }` |
+| 401 | Expected | Invalid/missing/expired session cookie | `{ "message" : "Unauthorized" }` |
+| 502 | Operational | Piston reached but returned an error/malformed response | `{ "message" : "Bad gateway" }` |
+| 503 | Operational | Piston unreachable (network/connection failure) | `{ "message" : "Service Unavailable" }` |
+

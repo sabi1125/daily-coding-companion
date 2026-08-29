@@ -9,6 +9,7 @@
 | Language / framework | **Go + Echo** |
 | Calling Claude | `github.com/anthropics/anthropic-sdk-go` |
 | Gmail API | `google.golang.org/api/gmail/v1` + `golang.org/x/oauth2` |
+| Code execution | **Piston** (`ghcr.io/engineer-man/piston`), self-hosted via Docker — runs submitted code sandboxed and returns stdout/stderr; execute-only, not a pass/fail grader (see `docs/DECISIONS.md`) |
 | Database | **MySQL** |
 | Database access | **GORM** |
 | Migrations | **golang-migrate** |

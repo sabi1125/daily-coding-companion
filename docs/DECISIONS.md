@@ -113,6 +113,35 @@ Production publishing status (lifting the 100-user cap) reopens this risk and wo
 its own solution — rate limiting, a paid tier, or bring-your-own-API-key — at that point,
 not before.
 
+## D6 — Code execution: self-hosted Piston, not a hosted judge API
+
+Wanted to let users actually run their submitted code and see output — not a pass/fail
+grader, that's still on the user's own honesty (see the app's core loop), just execute +
+show stdout/stderr.
+
+### Options considered
+| Option | What it is | Merits | Demerits / trade-offs |
+|---|---|---|---|
+| **A. Hosted judge API** (e.g. Judge0 via RapidAPI) | Third-party service, call their REST API | Zero infra, fastest to wire up | Every submission's code leaves our infra to a third party; per-request cost/rate limits; another vendor dependency for a core feature |
+| **B. Self-hosted Piston** (Docker) | `ghcr.io/engineer-man/piston`, sandboxed execution engine, run ourselves | Free, user code never leaves our own infra, full control over installed language versions | Piston's sandbox needs a `privileged` container — most PaaS hosts (Railway included) refuse those, so it can't just ride along with the rest of the app's deploy |
+| **C. Build our own sandbox** (gVisor/Firecracker/raw Docker exec) | Roll it ourselves | Full control | Disproportionate infra work for a solo one-month project — reinventing what Piston already does |
+
+### Decision & reasoning
+**Chosen: B** — self-hosted Piston.
+
+1. Submitted code is user-written and potentially sensitive; A means shipping it to a
+   third party for a core, frequently-hit feature. Not worth the exposure for what's
+   otherwise a solved problem.
+2. C is solving a problem Piston already solves well — not a good use of a one-month
+   budget.
+3. B's `privileged`-container requirement is a real cost, but it's a hosting-location
+   problem, not a reason to avoid self-hosting altogether.
+
+**Trade-off accepted / still open:** because Piston needs `privileged: true`, it likely
+can't deploy to Railway alongside `app`. Local dev runs it via `docker-compose` same as
+MySQL; the production host for Piston specifically (self-hosted VPS, Fly.io Machines,
+etc.) is still an open decision, separate from wherever `app` itself deploys.
+
 ## AI cost
 Two calls touch the API: **ingest parse** (once a day at ingest) and **Get Help** (at most
 once per problem, ever — cached after the first generation).
