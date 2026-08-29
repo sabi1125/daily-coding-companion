@@ -1,8 +1,8 @@
 FROM golang:1.26-alpine AS build
 WORKDIR /app
-COPY go.mod go.sum ./
+COPY backend/go.mod backend/go.sum ./
 RUN go mod download
-COPY . .
+COPY backend/ .
 RUN CGO_ENABLED=0 go build -o /app/bin/backend ./cmd/backend
 RUN CGO_ENABLED=0 GOBIN=/app/bin go install -tags mysql github.com/golang-migrate/migrate/v4/cmd/migrate@v4.19.0
 
