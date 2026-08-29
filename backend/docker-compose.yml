@@ -41,6 +41,8 @@ services:
         condition: service_healthy
       piston:
         condition: service_healthy
+      piston_installer:
+        condition: service_completed_successfully
     networks:
       - default
       - dcc_network
