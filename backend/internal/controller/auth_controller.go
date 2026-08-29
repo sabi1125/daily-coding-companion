@@ -103,7 +103,7 @@ func (controller *AuthController) Callback(c echo.Context) error {
 		Expires:  expiresAt,
 		HttpOnly: true,
 		Secure:   true,
-		SameSite: http.SameSiteLaxMode,
+		SameSite: http.SameSiteNoneMode,
 	})
 
 	return c.Redirect(http.StatusFound, controller.callbackRedirectUrl)
@@ -140,7 +140,7 @@ func (controller *AuthController) Signout(c echo.Context) error {
 		Path:     "/",
 		HttpOnly: true,
 		Secure:   true,
-		SameSite: http.SameSiteLaxMode,
+		SameSite: http.SameSiteNoneMode,
 		MaxAge:   -1,
 	})
 
