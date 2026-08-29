@@ -112,6 +112,9 @@ func MiddlewareLogger(logger *zap.Logger) echo.MiddlewareFunc {
 		return func(c echo.Context) error {
 			start := time.Now()
 			err := next(c)
+			if err != nil {
+				c.Error(err)
+			}
 
 			logger.Info("Request",
 				zap.String("method", c.Request().Method),

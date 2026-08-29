@@ -31,7 +31,7 @@ func (repository *ProblemsRepository) GetProblems(ctx context.Context, userId st
 	}
 
 	if err = db.Select("problem_id", "title", "needs_review_flag", "created_at").
-		Where("user_id = ?", userId).Preload("Submissions").Find(&problems).Error; err != nil {
+		Where("user_id = ?", userId).Order("created_at DESC").Preload("Submissions").Find(&problems).Error; err != nil {
 		err = response.NewDatabaseError(err)
 		return
 	}

@@ -29,6 +29,10 @@ type DBConfig struct {
 	DBName     string
 }
 
+type PistonConfig struct {
+	PistonBaseApi string
+}
+
 // LoadEnv load's environment variables
 func LoadEnv() {
 	if envLoaded {
@@ -63,6 +67,21 @@ func Load() *Config {
 	config := &Config{
 		Port:        port,
 		Environment: environment,
+	}
+
+	return config
+}
+
+func LoadPistonApiConfigFromEnv() *PistonConfig {
+	// setup
+
+	pistonBaseApi := os.Getenv("PISTON_BASE_API")
+	if pistonBaseApi == "" {
+		log.Fatal("PISTON_BASE_API piston base api is not set")
+	}
+
+	config := &PistonConfig{
+		PistonBaseApi: pistonBaseApi,
 	}
 
 	return config

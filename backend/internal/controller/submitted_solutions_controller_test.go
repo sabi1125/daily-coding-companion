@@ -338,3 +338,130 @@ func TestSubmittedSolutionsController_SubmitSolutions_ResponseShape(t *testing.T
 
 	assert.Contains(t, rec.Body.String(), `"problem_id"`, "problem_id key must actually be on the wire")
 }
+
+func TestSubmittedSolutionsController_RunSubmission(t *testing.T) {
+	tests := []struct {
+		name           string
+		body           string
+		mockSetup      func(m *interactorMock.MockSubmittedSolutionsInteractorInputPort)
+		expectedStatus int
+	}{
+		{
+			name: "success",
+			body: `{"language":"python","content":"print(1)"}`,
+			mockSetup: func(m *interactorMock.MockSubmittedSolutionsInteractorInputPort) {
+				m.EXPECT().RunSubmission(gomock.Any(), entities.SubmittedSolutionForExecution{
+					Language: "python",
+					Content:  "print(1)",
+				}).Return(response.ExecuteSubmissionResponse{
+					Language: "python",
+					Version:  "3.12.0",
+					Run:      response.Run{Stdout: "1\n", Code: 0},
+				}, nil)
+			},
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name:           "missing language — 400",
+			body:           `{"content":"print(1)"}`,
+			mockSetup:      func(m *interactorMock.MockSubmittedSolutionsInteractorInputPort) {},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name:           "unsupported language — 400",
+			body:           `{"language":"ruby","content":"puts 1"}`,
+			mockSetup:      func(m *interactorMock.MockSubmittedSolutionsInteractorInputPort) {},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name:           "missing content — 400",
+			body:           `{"language":"python"}`,
+			mockSetup:      func(m *interactorMock.MockSubmittedSolutionsInteractorInputPort) {},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name:           "malformed json body — 400",
+			body:           `{"language":`,
+			mockSetup:      func(m *interactorMock.MockSubmittedSolutionsInteractorInputPort) {},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name: "piston unreachable — 503 propagates",
+			body: `{"language":"python","content":"print(1)"}`,
+			mockSetup: func(m *interactorMock.MockSubmittedSolutionsInteractorInputPort) {
+				m.EXPECT().RunSubmission(gomock.Any(), entities.SubmittedSolutionForExecution{
+					Language: "python",
+					Content:  "print(1)",
+				}).Return(response.ExecuteSubmissionResponse{}, response.NewServiceUnavailable(errors.New("connection refused")))
+			},
+			expectedStatus: http.StatusServiceUnavailable,
+		},
+		{
+			name: "piston returned a bad response — 502 propagates",
+			body: `{"language":"python","content":"print(1)"}`,
+			mockSetup: func(m *interactorMock.MockSubmittedSolutionsInteractorInputPort) {
+				m.EXPECT().RunSubmission(gomock.Any(), entities.SubmittedSolutionForExecution{
+					Language: "python",
+					Content:  "print(1)",
+				}).Return(response.ExecuteSubmissionResponse{}, response.NewBadGateway(errors.New("malformed body")))
+			},
+			expectedStatus: http.StatusBadGateway,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			mockInteractor := interactorMock.NewMockSubmittedSolutionsInteractorInputPort(ctrl)
+			tt.mockSetup(mockInteractor)
+
+			e := newTestEcho()
+			controller := NewSubmittedSolutionsController(mockInteractor)
+			e.POST("/submissions/run", controller.RunSubmission)
+
+			req := httptest.NewRequest(http.MethodPost, "/submissions/run", bytes.NewBufferString(tt.body))
+			req.Header.Set("Content-Type", "application/json")
+			rec := httptest.NewRecorder()
+			e.ServeHTTP(rec, req)
+
+			assert.Equal(t, tt.expectedStatus, rec.Code)
+		})
+	}
+}
+
+func TestSubmittedSolutionsController_RunSubmission_ResponseShape(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockInteractor := interactorMock.NewMockSubmittedSolutionsInteractorInputPort(ctrl)
+	mockInteractor.EXPECT().RunSubmission(gomock.Any(), entities.SubmittedSolutionForExecution{
+		Language: "cpp",
+		Content:  "int main(){return 0;}",
+	}).Return(response.ExecuteSubmissionResponse{
+		Language: "cpp",
+		Version:  "10.2.0",
+		Compile:  &response.Run{Code: 0},
+		Run:      response.Run{Stdout: "", Code: 0},
+	}, nil)
+
+	e := newTestEcho()
+	controller := NewSubmittedSolutionsController(mockInteractor)
+	e.POST("/submissions/run", controller.RunSubmission)
+
+	req := httptest.NewRequest(http.MethodPost, "/submissions/run",
+		bytes.NewBufferString(`{"language":"cpp","content":"int main(){return 0;}"}`))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	e.ServeHTTP(rec, req)
+
+	assert.Equal(t, http.StatusOK, rec.Code)
+
+	var body response.ExecuteSubmissionResponse
+	assert.NoError(t, json.Unmarshal(rec.Body.Bytes(), &body))
+	assert.Equal(t, "cpp", body.Language)
+	if assert.NotNil(t, body.Compile, "compile result must survive into the response for compiled languages") {
+		assert.Equal(t, 0, body.Compile.Code)
+	}
+}

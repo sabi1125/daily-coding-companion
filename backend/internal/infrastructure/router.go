@@ -18,6 +18,12 @@ import (
 )
 
 func Router(e *echo.Echo, db *gorm.DB) {
+	// config
+	googleCfg := config.LoadGoogleConfigFromEnv()
+	googleOauthCfg := config.LoadOauthConfig(googleCfg)
+	claudeCfg := config.LoadClaudeConfigFromEnv()
+	pistonApiConfig := config.LoadPistonApiConfigFromEnv()
+
 	// shared
 	userRepository := repository.NewUsersRepository(db)
 	oauthRepository := repository.NewOauthRepository(db)
@@ -25,11 +31,7 @@ func Router(e *echo.Echo, db *gorm.DB) {
 	sessionRepository := repository.NewSessionsRepository(db)
 	problemRepository := repository.NewProblemsRepository(db)
 	ingestRepository := repository.NewIngestRepository(db)
-
-	// config
-	googleCfg := config.LoadGoogleConfigFromEnv()
-	googleOauthCfg := config.LoadOauthConfig(googleCfg)
-	claudeCfg := config.LoadClaudeConfigFromEnv()
+	pistonApiRepository := repository.NewPistonApiRepository(pistonApiConfig)
 
 	// client
 	claudeClient := anthropic.NewClient(option.WithAPIKey(claudeCfg.APIKey))
@@ -56,7 +58,7 @@ func Router(e *echo.Echo, db *gorm.DB) {
 	RegisteredAuthRoutes(e, db, userRepository, oauthRepository, settingRepository, sessionRepository, *googleCfg, googleOauthCfg, uuidGenerator, txManager)
 	RegisteredSettingsRoutes(e, db, sessionRepository, userRepository, problemRepository, txManager)
 	RegisteredProblemsRoutes(e, db, problemRepository, sessionRepository, ingestRunner, ingestRepository, settingRepository, claudeClient)
-	RegisteredSubmittedSolutionsRoutes(e, db, sessionRepository, problemRepository, uuidGenerator, txManager)
+	RegisteredSubmittedSolutionsRoutes(e, db, sessionRepository, problemRepository, uuidGenerator, pistonApiRepository, txManager)
 }
 
 func RegisteredHealthRouter(e *echo.Echo, db *gorm.DB) {
@@ -144,14 +146,16 @@ func RegisteredSubmittedSolutionsRoutes(
 	sessionRepository *repository.SessionsRepository,
 	problemRepository *repository.ProblemsRepository,
 	uuidGenerator util.UUIDGenerator,
+	pistonApiRepository *repository.PistonApiRepository,
 	txManager tx.Manager,
 ) {
 	solutions := e.Group("/submissions")
 	solutions.Use(middleware.Auth(sessionRepository))
 	repository := repository.NewSubmittedSolutionsRepository(db)
-	interactor := interactor.NewSubmittedSolutionInteractor(repository, problemRepository, uuidGenerator, txManager)
+	interactor := interactor.NewSubmittedSolutionInteractor(repository, pistonApiRepository, problemRepository, uuidGenerator, txManager)
 	controller := controller.NewSubmittedSolutionsController(interactor)
 
 	solutions.GET("/:id", controller.GetUserSubmissions)
 	solutions.POST("/:id", controller.SubmitSolutions)
+	solutions.POST("/run", controller.RunSubmission)
 }

@@ -31,6 +31,7 @@ func (repository *SubmittedSolutionsRepository) GetSubmittedSolutions(ctx contex
 	if err = db.Select("submitted_solutions.*").
 		Joins("JOIN problems ON problems.problem_id = submitted_solutions.problem_id").
 		Where("problems.problem_id = ? AND problems.user_id = ?", problemId, userId).
+		Order("submitted_solutions.submitted_at DESC").
 		Find(&submittedSolutions).Error; err != nil {
 		err = response.NewDatabaseError(err)
 		return

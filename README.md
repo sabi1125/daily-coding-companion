@@ -34,7 +34,7 @@ nothing for it to pull, and the app has no way to function.
 
 ## Stack
 
-- **Backend:** Go + Echo, MySQL, GORM, Gmail API, Claude API
+- **Backend:** Go + Echo, MySQL, GORM, Gmail API, Claude API, Piston (self-hosted code execution)
 - **Frontend:** React + TypeScript, Vite, Tailwind, shadcn/ui
 - **Hosting:** Railway (backend, frontend, database, scheduled job)
 

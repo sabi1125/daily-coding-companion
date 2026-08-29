@@ -11,6 +11,7 @@ package mock
 
 import (
 	entities "backend/internal/domain/entities"
+	response "backend/internal/response"
 	context "context"
 	reflect "reflect"
 
@@ -54,6 +55,21 @@ func (m *MockSubmittedSolutionsInteractorInputPort) GetSubmittedSolutions(ctx co
 func (mr *MockSubmittedSolutionsInteractorInputPortMockRecorder) GetSubmittedSolutions(ctx, userId, problemId any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSubmittedSolutions", reflect.TypeOf((*MockSubmittedSolutionsInteractorInputPort)(nil).GetSubmittedSolutions), ctx, userId, problemId)
+}
+
+// RunSubmission mocks base method.
+func (m *MockSubmittedSolutionsInteractorInputPort) RunSubmission(ctx context.Context, request entities.SubmittedSolutionForExecution) (response.ExecuteSubmissionResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RunSubmission", ctx, request)
+	ret0, _ := ret[0].(response.ExecuteSubmissionResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// RunSubmission indicates an expected call of RunSubmission.
+func (mr *MockSubmittedSolutionsInteractorInputPortMockRecorder) RunSubmission(ctx, request any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RunSubmission", reflect.TypeOf((*MockSubmittedSolutionsInteractorInputPort)(nil).RunSubmission), ctx, request)
 }
 
 // SubmitSolution mocks base method.

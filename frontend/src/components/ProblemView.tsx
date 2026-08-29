@@ -1,7 +1,7 @@
 import type { AiHelp, Problem } from "@/types/Problems";
 import { Badge } from "./ui/badge";
 import ResolveBadgeVariant from "@/util/badgeResolver";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import api, { getErrorMessage } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import {
@@ -24,7 +24,7 @@ import { codeEditorTheme } from "@/lib/codeMirrorTheme";
 import { go } from "@codemirror/lang-go"
 import { ToggleGroup } from "@/components/ui/toggle-group"
 import { ToggleGroupItem } from "@/components/ui/toggle-group";
-import type { SubmissionRequest } from "@/types/Submissons";
+import type { SubmissionRequest, ExecuteSubmittedSolution, ExecuteResposne } from "@/types/Submissons";
 import { useNavigate } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -42,6 +42,15 @@ async function postSolution(problemId: string, solution: string, status: string)
     status: status
   }
   await api.post(`/submissions/${problemId}`, req)
+}
+
+async function runSolution(language: string, solution: string): Promise<ExecuteResposne> {
+  const req: ExecuteSubmittedSolution = {
+    language: language,
+    content: solution
+  }
+  const res = await api.post("/submissions/run", req)
+  return res.data
 }
 
 const languages = [
@@ -65,8 +74,35 @@ function ProblemView({ problem, isFromHistory }: { problem: Problem, isFromHisto
   const [solution, setSolution] = useState<string>()
   const [status, setStatus] = useState<string>("Failed")
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [output, setOutput] = useState<ExecuteResposne>()
+  const [isRunning, setIsRunning] = useState(false)
+  const [showOutput, setShowOutput] = useState(false)
 
   const navigate = useNavigate()
+
+  const handleRun = () => {
+    if (!solution || isRunning) return
+    setIsRunning(true)
+    setShowOutput(true)
+    runSolution(code, solution)
+      .then(setOutput)
+      .catch((err) => {
+        toast.error(getErrorMessage(err, "Couldn't run code. Please try again later."))
+        setShowOutput(false)
+      })
+      .finally(() => setIsRunning(false))
+  }
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+        e.preventDefault()
+        handleRun()
+      }
+    }
+    window.addEventListener("keydown", handler)
+    return () => window.removeEventListener("keydown", handler)
+  })
 
   return (
     <div className="mx-auto w-full max-w-5xl px-10 py-14 flex flex-col gap-5">
@@ -145,36 +181,70 @@ function ProblemView({ problem, isFromHistory }: { problem: Problem, isFromHisto
       {/* editor */}
 
       <div className="rounded-lg border border-border-faint overflow-hidden shadow-2xs">
-        <div className="flex flex-row justify-between items-center text-text-secondary h-9 p-4 border-b border-border-faint">
-          <span className="text-sm">solution</span>
-
-          <Select value={code} onValueChange={(v => setCode(v ? v : "python"))}>
-            <SelectTrigger className="w-full max-w-48">
-              <SelectValue className="font-semibold text-xs" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectGroup>
-                <SelectLabel className="font-semibold text-xs">{code}</SelectLabel>
-                {languages.map((lang) => (
-                  <SelectItem
-                    key={lang.label}
-                    value={lang.label}
-                    className="font-semibold text-xs">
-                    {lang.label}
-                  </SelectItem>
-                ))}
-              </SelectGroup>
-            </SelectContent>
-          </Select>
+        <div className="flex flex-row justify-between items-center text-text-secondary h-11 p-4 border-b border-border-faint">
+          <div>
+            <span className="text-sm">solution</span>
+          </div>
+          <div className="flex flex-row gap-3">
+            <Select value={code} onValueChange={(v => setCode(v ? v : "python"))}>
+              <SelectTrigger className="w-full max-w-48">
+                <SelectValue className="font-semibold text-xs" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  <SelectLabel className="font-semibold text-xs">{code}</SelectLabel>
+                  {languages.map((lang) => (
+                    <SelectItem
+                      key={lang.label}
+                      value={lang.label}
+                      className="font-semibold text-xs">
+                      {lang.label}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+            <Button
+              variant="outline"
+              className="text-sm w-20"
+              disabled={!solution || isRunning}
+              onClick={handleRun}
+            >
+              {isRunning ? <Loader2 className="size-4 animate-spin" /> : <>Run <p className="text-text-faint text-xs">⌘↵</p></>}
+            </Button>
+          </div>
         </div>
-        <CodeMirror
-          height="450px"
-          extensions={[codeEditorTheme, vim(), language[code]]}
-          onChange={s => { setSolution(s) }}
-          basicSetup={{
-            lineNumbers: true,
-          }}
-        />
+        <div>
+          <CodeMirror
+            height="450px"
+            extensions={[codeEditorTheme, vim(), language[code]]}
+            onChange={s => { setSolution(s) }}
+            basicSetup={{
+              lineNumbers: true,
+            }}
+          />
+          {
+            showOutput ?
+              <div className="h-30 bg-foreground text-foreground flex flex-col">
+                <div className="flex flex-row justify-between text-background text-sm p-4 gap-2">
+                  <div className="flex flex-col gap-2">
+                    <p className="text-muted-foreground">output</p>
+                    <p className="text-xs">{output?.run.output}</p>
+                  </div>
+                  <div className="text-muted-foreground font-semibold flex flex-row gap-2 justify-center items-center text-xs">
+                    <p>{output?.run.cpu_time}ms</p>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="cursor-pointer"
+                      onClick={() => { setShowOutput(false) }}
+                    >x</Button>
+                  </div>
+                </div>
+              </div>
+              : ""
+          }
+        </div>
       </div>
 
       {/* toggle group */}
