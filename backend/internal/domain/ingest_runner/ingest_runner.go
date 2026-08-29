@@ -128,7 +128,8 @@ func (r *IngestRunner) ingestForUser(ctx context.Context, userId string, ingestD
 		parsed.FoundInEmail == nil ||
 		!*parsed.FoundInEmail
 	if parseErr != nil {
-		logger.Warnf("claude parse failed for user %s, flagging for review: %v", userId, parseErr)
+		logger.Warnf("claude parse failed for user %s, recording as a failed ingest: %v", userId, parseErr)
+		return r.writeFailedIngestRun(ctx, ingestUuid, userId, ingestDate, retried, "claude parse failed: "+parseErr.Error())
 	} else if parsed.FoundInEmail != nil && !*parsed.FoundInEmail {
 		logger.Infof("no problem found in today's email for user %s, using claude's fallback problem", userId)
 	}
