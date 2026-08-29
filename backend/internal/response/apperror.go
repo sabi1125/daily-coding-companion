@@ -4,11 +4,6 @@ import (
 	logger "backend/internal/log"
 )
 
-// AppError carries a client-facing Status plus the underlying error (for
-// logging — never sent to the client). Repository/interactor layers return
-// this instead of a bare error so the central error handler always knows
-// the right status code and log level, without needing net/http imported
-// anywhere below the controller.
 type AppError struct {
 	Status Status
 	Err    error
@@ -26,17 +21,9 @@ func (e *AppError) Unwrap() error {
 	return e.Err
 }
 
-// newAppError logs immediately, right here at construction — which is
-// always the real call site (auth_interactor.go, wherever), not
-// error_handler.go's generic dispatch point. Category == Expected stays
-// silent (routine, client-caused, not a problem); everything else gets
-// logged exactly once, here. response.ErrorHandler does not log AppErrors
-// itself for this reason — logging already happened by the time it sees one.
 func newAppError(status Status, err error) *AppError {
 	appErr := &AppError{Status: status, Err: err}
-	if status.Category != Expected {
-		logger.Error(appErr)
-	}
+	logger.Error(appErr)
 	return appErr
 }
 
