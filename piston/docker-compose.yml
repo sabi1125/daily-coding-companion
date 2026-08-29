@@ -1,0 +1,35 @@
+services:
+  piston:
+    image: ghcr.io/engineer-man/piston:latest
+    container_name: piston_container
+    restart: always
+    privileged: true
+    ports:
+      - "2000:2000"
+    volumes:
+      - piston_packages:/piston/packages
+      - tmpfs_exec:/tmp:exec
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:2000/api/v2/runtimes',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))"]
+      interval: 3s
+      timeout: 2s
+      retries: 5
+
+  piston_installer:
+    image: alpine:latest
+    container_name: piston_installer
+    depends_on:
+      piston:
+        condition: service_healthy
+    volumes:
+      - ./scripts:/app/scripts
+    entrypoint: >
+      /bin/sh -c "
+      apk add --no-cache curl &&
+      chmod +x /app/scripts/piston_runtimes_install.sh &&
+      /app/scripts/piston_runtimes_install.sh
+      "
+
+volumes:
+  piston_packages:
+  tmpfs_exec:
