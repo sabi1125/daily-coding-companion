@@ -23,7 +23,11 @@ function Auth() {
   const [setting, setSetting] = useState<SettingResponse | null>()
 
   useEffect(() => {
-    getSetting().then(s => { setSetting(s) }).catch((err) => { toast.error(getErrorMessage(err, "Couldn't reach the server. Please try again later.")); setSetting(null) })
+    let ignore = false
+    getSetting()
+      .then(s => { if (!ignore) setSetting(s) })
+      .catch((err) => { if (!ignore) { toast.error(getErrorMessage(err, "Couldn't reach the server. Please try again later.")); setSetting(null) } })
+    return () => { ignore = true }
   }, [])
 
   if (setting === undefined) {
