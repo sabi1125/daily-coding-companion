@@ -85,7 +85,7 @@ services:
       piston:
         condition: service_healthy
     volumes:
-      - ./backend/scripts:/app/scripts
+      - ./piston/scripts:/app/scripts
     entrypoint: >
       /bin/sh -c "
       apk add --no-cache curl &&
