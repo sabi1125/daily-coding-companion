@@ -10,8 +10,8 @@ FROM alpine:latest
 WORKDIR /app
 COPY --from=build /app/bin/backend ./backend
 COPY --from=build /app/bin/migrate /usr/local/bin/migrate
-COPY migrations ./migrations
-COPY scripts/entrypoint.sh ./entrypoint.sh
+COPY --from=build /app/migrations ./migrations
+COPY --from=build /app/scripts/entrypoint.sh ./entrypoint.sh
 RUN chmod +x ./entrypoint.sh
 EXPOSE 8080
 ENTRYPOINT ["./entrypoint.sh"]
