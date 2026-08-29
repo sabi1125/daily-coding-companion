@@ -45,7 +45,7 @@ func LoadEnv() {
 	}
 
 	if err := godotenv.Load(); err != nil {
-		log.Fatal("Failed to load .env file")
+		log.Println("No .env file found, relying on environment variables already set")
 	}
 	envLoaded = true
 }
