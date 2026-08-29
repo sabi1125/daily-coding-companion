@@ -53,14 +53,18 @@ emails, they land between 12am-1am JST, so 2am gives an hour of buffer.
       non-`invalid_grant` error, or an email was found but doesn't actually contain a
       coding problem (an announcement, a skipped-day notice): Claude invents an original
       problem of similar style instead, and reports `found_in_email = false`.
-    - `needs_review_flag` is `true` whenever parsing errors, `title`/`problem_text` come
-      back missing, **or** `found_in_email = false` — a Claude-invented problem stays
-      distinguishable from one that actually came from the email, even though both fields
-      are populated either way. None of this is a `RunForUser` failure. `raw_problem` is
-      always stored regardless (empty whenever there was no real email to store).
+    - The Claude call itself failing (API error, or Claude never calling the
+      `extract_problem` tool) is different from the above — there's no problem content at
+      all, real or invented, so this is a `RunForUser` failure (see step 5), not a flagged
+      success.
+    - `needs_review_flag` is `true` whenever `title`/`problem_text` come back missing
+      **or** `found_in_email = false` — a Claude-invented problem stays distinguishable
+      from one that actually came from the email, even though both fields are populated
+      either way. `raw_problem` is always stored regardless (empty whenever there was no
+      real email to store).
 5. Write `problems` + `ingest_runs` in one transaction — both or neither.
-    - Failure (step 2, `invalid_grant` only): `ingest_runs` only, `status = failed`,
-      `error` set, no `problems` row.
+    - Failure (step 2 `invalid_grant`, or step 4 Claude call failure): `ingest_runs` only,
+      `status = failed`, `error` set, no `problems` row.
     - Success (step 4, flagged or not): `problems` row created, `ingest_runs.status =
       success`, `problem_id` set.
     - If even the `ingest_runs` write fails (DB down, transaction can't commit), this user
@@ -69,17 +73,24 @@ emails, they land between 12am-1am JST, so 2am gives an hour of buffer.
    `oauth_credentials` row. Same applies if the whole job process crashes mid-loop: users
    not yet reached that run get no row, and pick up via the lazy retry on next login.
 
-`ingest_runs.status` is only ever `success` or `failed`. A Claude parse failure, an
-unreachable Gmail, or no email found are all still `success` — the row got created, it's
-just flagged via `found_in_email`/`needs_review_flag`. **Only a dead refresh token
-(`invalid_grant`) is `failed`** — every other way of not getting a real email falls back to
-Claude generating one instead of failing the run.
+`ingest_runs.status` is only ever `success` or `failed`. An unreachable Gmail or no email
+found are still `success` — the row got created, it's just flagged via
+`found_in_email`/`needs_review_flag`. **A dead refresh token (`invalid_grant`) or the
+Claude call itself failing are `failed`** — every other way of not getting a real email
+falls back to Claude generating one instead of failing the run.
 
-Why `invalid_grant` alone stays a hard failure and doesn't get the same fallback: it means
-the Gmail connection itself is broken and needs the user to reconnect — not a "nothing to
+Why `invalid_grant` stays a hard failure and doesn't get the same fallback: it means the
+Gmail connection itself is broken and needs the user to reconnect — not a "nothing to
 ingest today" situation the other cases are. Silently generating a fallback problem here
 would hide that from the user indefinitely, which is exactly the "silent failure" this
 project's `needs-reauth` + "Reconnect Gmail" design (`docs/DECISIONS.md` D1) exists to avoid.
+
+Why a failed Claude call is also a hard failure rather than the usual fallback: the fallback
+path (Claude *successfully* inventing a problem when there's no real email) only works
+because Claude's call actually completed — if the call itself errors or Claude never
+returns a result, there's no problem content to fall back to, invented or otherwise.
+Persisting a `problems` row with a null `title`/`problem_text` in that case would leave the
+frontend rendering a broken problem instead of the retry logic picking it back up.
 
 **Idempotency**
 - Same `(user_id, ingest_date, retried)` twice (cron re-triggered, or the race between two
@@ -96,13 +107,12 @@ status code here, this isn't a response):
 | Category | When | `ingest_runs.error` |
 |---|---|---|
 | Expected | Refresh token invalid/revoked (7-day testing-mode expiry, or user revoked access) — not our bug, the user is simply no longer authorized | `"refresh token invalid"` |
+| Operational | Claude API call itself fails, or Claude never calls the `extract_problem` tool — no problem content, real or invented, to persist | `"claude parse failed: <err>"` |
 
-This is the only row now — see the "why `invalid_grant` alone stays a hard failure" note
-above. Everything that used to be its own failure category (Gmail unreachable/rate-limited,
-no email found, a non-`invalid_grant` exchange error) falls through to Claude generating a
-fallback problem instead, so none of them produce `status = "failed"` anymore.
+Everything that used to be its own failure category (Gmail unreachable/rate-limited, no
+email found, a non-`invalid_grant` exchange error) falls through to Claude generating a
+fallback problem instead, so none of them produce `status = "failed"`.
 
 A DB write/transaction failure is **not** in this list either — per step 5, that case
 leaves no `ingest_runs` row at all rather than one with `status = "failed"`, so there's no
-`error` string to record; it just falls to the lazy retry. A Claude parse failure isn't in
-this list either — it doesn't produce `status = "failed"`, see step 4.
+`error` string to record; it just falls to the lazy retry.
