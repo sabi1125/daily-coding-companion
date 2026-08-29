@@ -12,7 +12,7 @@ import (
 
 func Connection(cfg *config.DBConfig) *gorm.DB {
 	dsn := fmt.Sprintf(
-		"%s:%s@tcp(%s:%s)/%s?parseTime=true&charset=utf8mb4&loc=Local",
+		"%s:%s@tcp(%s:%s)/%s?parseTime=true&charset=utf8mb4&loc=Asia%%2FTokyo",
 		cfg.DBUser,
 		cfg.DBPassword,
 		cfg.DBHost,

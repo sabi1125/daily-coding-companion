@@ -53,8 +53,9 @@ func TestSubmittedSolutionsInteractor_GetSubmittedSolutions(t *testing.T) {
 			mockProblems := inputportMock.NewMockProblemsRepositoryInputPort(ctrl)
 			mockUUID := utilMock.NewMockUUIDGenerator(ctrl)
 			mockTx := txMock.NewMockManager(ctrl)
+			mockPiston := inputportMock.NewMockPistonApiRepositoryInputport(ctrl)
 
-			interactor := NewSubmittedSolutionInteractor(mockSubmissions, mockProblems, mockUUID, mockTx)
+			interactor := NewSubmittedSolutionInteractor(mockSubmissions, mockPiston, mockProblems, mockUUID, mockTx)
 
 			solutions, err := interactor.GetSubmittedSolutions(ctx, testUserId, testProblemId)
 
@@ -162,11 +163,12 @@ func TestSubmittedSolutionsInteractor_SubmitSolution(t *testing.T) {
 			mockProblems := inputportMock.NewMockProblemsRepositoryInputPort(ctrl)
 			mockUUID := utilMock.NewMockUUIDGenerator(ctrl)
 			mockTx := txMock.NewMockManager(ctrl)
+			mockPiston := inputportMock.NewMockPistonApiRepositoryInputport(ctrl)
 			mockWithinTransaction(mockTx)
 
 			tt.prepareFunc(mockSubmissions, mockProblems, mockUUID)
 
-			interactor := NewSubmittedSolutionInteractor(mockSubmissions, mockProblems, mockUUID, mockTx)
+			interactor := NewSubmittedSolutionInteractor(mockSubmissions, mockPiston, mockProblems, mockUUID, mockTx)
 
 			solution, err := interactor.SubmitSolution(ctx, testUserId, testProblemId, testBody)
 

@@ -111,3 +111,32 @@ func (controller *SubmittedSolutionsController) SubmitSolutions(c echo.Context) 
 		SubmittedAt: solution.SubmittedAt,
 	})
 }
+
+func (controller *SubmittedSolutionsController) RunSubmission(c echo.Context) error {
+	logger.Info("SubmissionsController: RunSubmissions")
+
+	ctx := c.Request().Context()
+
+	var submittedSolutionForExecution entities.SubmittedSolutionForExecution
+	if err := c.Bind(&submittedSolutionForExecution); err != nil {
+		err = response.NewBadRequest(err)
+		return err
+	}
+
+	if err := validator.ValidateStruct(&submittedSolutionForExecution); err != nil {
+		err = response.NewBadRequest(err)
+		return err
+	}
+
+	res, err := controller.submittedSolutionsInteractor.RunSubmission(ctx, submittedSolutionForExecution)
+	if err != nil {
+		return err
+	}
+
+	return c.JSON(http.StatusOK, &response.ExecuteSubmissionResponse{
+		Language: res.Language,
+		Version:  res.Version,
+		Compile:  res.Compile,
+		Run:      res.Run,
+	})
+}

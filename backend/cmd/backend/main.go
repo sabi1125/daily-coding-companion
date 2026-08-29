@@ -2,6 +2,7 @@ package main
 
 import (
 	"os"
+	_ "time/tzdata"
 
 	"backend/cmd/ingest"
 	"backend/internal/config"
