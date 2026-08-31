@@ -82,15 +82,15 @@ function History() {
           // when problems exist
           <section
             key={p.problem_id}
-            className="border-b border-border-faint py-5 flex flex-row justify-between cursor-pointer"
+            className="border-b border-border-faint py-5 flex flex-row items-start justify-between gap-4 cursor-pointer"
             onClick={() => navigate(`/history/${p.problem_id}`)}
           >
-            <div className="flex flex-row rounded-lg items-center gap-3">
+            <div className="flex flex-row rounded-lg items-center gap-3 min-w-0">
               <h2 className="font-medium">{p.title}</h2>
               {p.needs_review_flag ? <Badge variant={"review"}>Review</Badge> : null}
             </div>
-            <div className="flex flex-row gap-2">
-              <p className="text-xs text-text-faint">{DateToString(p.created_at)}</p>
+            <div className="flex flex-row gap-2 shrink-0">
+              <p className="text-xs text-text-faint whitespace-nowrap">{DateToString(p.created_at)}</p>
               <Badge variant={ResolveBadgeVariant(p.status)} className="">{p.status}</Badge>
             </div>
           </section>
