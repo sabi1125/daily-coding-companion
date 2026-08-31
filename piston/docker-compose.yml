@@ -9,6 +9,8 @@ services:
     volumes:
       - piston_packages:/piston/packages
       - tmpfs_exec:/tmp:exec
+    networks:
+      - dcc_network
     healthcheck:
       test: ["CMD", "node", "-e", "require('http').get('http://localhost:2000/api/v2/runtimes',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))"]
       interval: 3s
@@ -33,3 +35,7 @@ services:
 volumes:
   piston_packages:
   tmpfs_exec:
+networks:
+  dcc_network:
+    external: true
+    name: daily-coding-companion_dcc_network

@@ -225,13 +225,13 @@ function ProblemView({ problem, isFromHistory }: { problem: Problem, isFromHisto
           />
           {
             showOutput ?
-              <div className="h-30 bg-foreground text-foreground flex flex-col">
-                <div className="flex flex-row justify-between text-background text-sm p-4 gap-2">
-                  <div className="flex flex-col gap-2">
+              <div className="h-30 bg-foreground text-foreground flex flex-col overflow-x-auto scrollbar-none pr-4 pl-4 pt-3">
+                {/* header */}
+                <div className="text-muted-foreground font-semibold flex flex-row gap-2 justify-between items-center text-xs">
+                  <div>
                     <p className="text-muted-foreground">output</p>
-                    <p className="text-xs">{output?.run.output}</p>
                   </div>
-                  <div className="text-muted-foreground font-semibold flex flex-row gap-2 justify-center items-center text-xs">
+                  <div className="flex flex-row items-center justify-center gap-2">
                     <p>{output?.run.cpu_time}ms</p>
                     <Button
                       variant="ghost"
@@ -240,6 +240,9 @@ function ProblemView({ problem, isFromHistory }: { problem: Problem, isFromHisto
                       onClick={() => { setShowOutput(false) }}
                     >x</Button>
                   </div>
+                </div>
+                <div className="text-background pr-2">
+                  <p className="text-xs whitespace-pre-line">{output?.run.output}</p>
                 </div>
               </div>
               : ""
@@ -277,7 +280,7 @@ function ProblemView({ problem, isFromHistory }: { problem: Problem, isFromHisto
           {isSubmitting ? <Loader2 className="size-4 animate-spin" /> : "Submit attempt"}
         </Button>
       </div>
-    </div>
+    </div >
   )
 }
 
