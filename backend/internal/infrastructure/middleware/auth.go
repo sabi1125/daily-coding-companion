@@ -33,8 +33,17 @@ func Auth(sessionsRepository inputport.SessionsRepositoryInputPort) echo.Middlew
 			if err != nil {
 				return err
 			}
-			if session == nil || session.ExpiresAt.Before(time.Now()) {
-				return response.NewUnauthorized(errors.New("session invalid or expired"))
+
+			if session == nil {
+				return response.NewUnauthorized(errors.New("session invalid"))
+			}
+
+			if session.ExpiresAt.Before(time.Now()) {
+				deleteErr := sessionsRepository.DeleteUserSession(c.Request().Context(), session.SessionId, session.UserId)
+				if deleteErr != nil {
+					logger.Error(deleteErr)
+				}
+				return response.NewUnauthorized(errors.New("session expired"))
 			}
 
 			ctx := context.WithValue(c.Request().Context(), UserIDKey, session.UserId)
