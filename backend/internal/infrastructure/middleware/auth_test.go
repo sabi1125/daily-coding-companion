@@ -71,6 +71,7 @@ func TestAuth(t *testing.T) {
 					UserId:    "user-1",
 					ExpiresAt: time.Now().Add(-time.Hour),
 				}, nil)
+				m.EXPECT().DeleteUserSession(gomock.Any(), "session-1", "user-1").Return(nil)
 			},
 			expectedStatus: http.StatusUnauthorized,
 		},
