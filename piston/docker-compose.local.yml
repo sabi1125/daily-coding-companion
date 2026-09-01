@@ -1,0 +1,4 @@
+networks:
+  dcc_network:
+    external: true
+    name: daily-coding-companion_dcc_network
