@@ -1,11 +1,21 @@
 services:
+  piston_nginx:
+    image: nginx:alpine
+    container_name: piston_nginx
+    ports: 
+      - 2000:2000
+    env_file:
+      - .env
+    restart: always
+    volumes:
+      - ./nginx/templates:/etc/nginx/templates:ro
+    networks:
+      - dcc_network
   piston:
     image: ghcr.io/engineer-man/piston:latest
     container_name: piston_container
     restart: always
     privileged: true
-    ports:
-      - "2000:2000"
     volumes:
       - piston_packages:/piston/packages
       - tmpfs_exec:/tmp:exec

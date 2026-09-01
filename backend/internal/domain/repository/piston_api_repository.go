@@ -42,6 +42,7 @@ func (repository *PistonApiRepository) RunSubmission(ctx context.Context, reques
 	}
 
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-Auth", repository.config.PistonSharedSecret)
 
 	client := &http.Client{}
 	resp, err := client.Do(req)

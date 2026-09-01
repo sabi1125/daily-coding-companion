@@ -32,6 +32,7 @@ func TestPistonApiRepository_RunSubmission(t *testing.T) {
 				return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 					assert.Equal(t, "/v2/execute", r.URL.Path)
 					assert.Equal(t, "application/json", r.Header.Get("Content-Type"))
+					assert.Equal(t, "test-secret", r.Header.Get("X-Auth"))
 					w.Header().Set("Content-Type", "application/json")
 					w.WriteHeader(http.StatusOK)
 					w.Write([]byte(`{"language":"python","version":"3.12.0","run":{"stdout":"1\n","stderr":"","code":0}}`))
@@ -75,7 +76,7 @@ func TestPistonApiRepository_RunSubmission(t *testing.T) {
 			server := tt.buildServer()
 			defer server.Close()
 
-			repo := NewPistonApiRepository(&config.PistonConfig{PistonBaseApi: server.URL})
+			repo := NewPistonApiRepository(&config.PistonConfig{PistonBaseApi: server.URL, PistonSharedSecret: "test-secret"})
 
 			res, err := repo.RunSubmission(context.Background(), entities.SubmittedSolutionRequest{
 				Language: "python",
