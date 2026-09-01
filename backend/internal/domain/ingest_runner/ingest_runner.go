@@ -207,7 +207,7 @@ func (r *IngestRunner) writeFailedIngestRun(ctx context.Context, ingestUuid, use
 
 type parsedProblem struct {
 	Title        *string `json:"title" jsonschema:"required,description=A short descriptive title you write for the problem"`
-	ProblemText  *string `json:"problem_text" jsonschema:"required,description=The problem statement; verbatim from the email if one was found there — otherwise one you write yourself"`
+	ProblemText  *string `json:"problem_text" jsonschema:"required,description=The problem statement; verbatim from the email if one was found there — otherwise one you write yourself. Only the final problem statement itself — never your own reasoning, corrections, or verification work"`
 	AlgorithmTag *string `json:"algorithm_tag" jsonschema:"required,description=The primary algorithm/data-structure it exercises; your own assessment"`
 	Difficulty   *string `json:"difficulty" jsonschema:"required,description=One of Easy/Medium/Hard — your own assessment of the problem's complexity"`
 	FoundInEmail *bool   `json:"found_in_email" jsonschema:"required,description=True only if problem_text came from the email itself; false if you had to invent a problem because the email had none"`
@@ -238,9 +238,12 @@ func (r *IngestRunner) parseWithClaude(ctx context.Context, rawBody string) (par
 	if rawBody == "" {
 		prompt = "No Daily Coding Problem email was found for today. Invent an original " +
 			"coding problem yourself — similar style and scope to a typical technical " +
-			"interview question — so there's still something to solve today. Call " +
-			extractProblemTool + " with problem_text/title/algorithm_tag/difficulty for " +
-			"your invented problem, and found_in_email: false."
+			"interview question — so there's still something to solve today. Work out " +
+			"the problem and any example cases in your own thinking first — problem_text " +
+			"must contain only the final, clean problem statement, never your reasoning, " +
+			"corrections, or verification narration. Call " + extractProblemTool +
+			" with problem_text/title/algorithm_tag/difficulty for your invented problem, " +
+			"and found_in_email: false."
 	} else {
 		prompt = "This is a Daily Coding Problem newsletter email. Usually the problem " +
 			"statement itself is in the email — there is no title, algorithm tag, or " +
