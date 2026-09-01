@@ -82,7 +82,7 @@ func LoadPistonApiConfigFromEnv() *PistonConfig {
 	}
 
 	pistonSharedSecret := os.Getenv("PISTON_SHARED_SECRET")
-	if pistonBaseApi == "" {
+	if pistonSharedSecret == "" {
 		log.Fatal("PISTON_SHARED_SECRET piston shared secret is not set")
 	}
 
