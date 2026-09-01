@@ -30,7 +30,8 @@ type DBConfig struct {
 }
 
 type PistonConfig struct {
-	PistonBaseApi string
+	PistonBaseApi      string
+	PistonSharedSecret string
 }
 
 // LoadEnv load's environment variables
@@ -80,8 +81,14 @@ func LoadPistonApiConfigFromEnv() *PistonConfig {
 		log.Fatal("PISTON_BASE_API piston base api is not set")
 	}
 
+	pistonSharedSecret := os.Getenv("PISTON_SHARED_SECRET")
+	if pistonBaseApi == "" {
+		log.Fatal("PISTON_SHARED_SECRET piston shared secret is not set")
+	}
+
 	config := &PistonConfig{
-		PistonBaseApi: pistonBaseApi,
+		PistonBaseApi:      pistonBaseApi,
+		PistonSharedSecret: pistonSharedSecret,
 	}
 
 	return config

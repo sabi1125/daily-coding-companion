@@ -1,0 +1,15 @@
+server {
+  listen 2000;
+  server_name localhost;
+
+  location / {
+    if ($http_x_auth = "") {
+      return 401 "Unauthorized: Missing X-Auth header\n";
+    }
+
+    if ($http_x_auth != "$PISTON_SHARED_SECRET") {
+      return 403 "Forbidden: Invalid credentials\n";
+    }
+    proxy_pass http://piston_container:2000;
+  }
+}

@@ -33,6 +33,7 @@ func TestPistonApiRepository_RunSubmission(t *testing.T) {
 					assert.Equal(t, "/v2/execute", r.URL.Path)
 					assert.Equal(t, "application/json", r.Header.Get("Content-Type"))
 					w.Header().Set("Content-Type", "application/json")
+					w.Header().Set("X-Auth", "47f88c9fe58a6861c6f7da8f5a44e5b30fa1b7f293355fe6391aacbc9193e3ec")
 					w.WriteHeader(http.StatusOK)
 					w.Write([]byte(`{"language":"python","version":"3.12.0","run":{"stdout":"1\n","stderr":"","code":0}}`))
 				}))
@@ -54,6 +55,7 @@ func TestPistonApiRepository_RunSubmission(t *testing.T) {
 				return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 					w.Header().Set("Content-Type", "application/json")
 					w.WriteHeader(http.StatusBadRequest)
+					w.Header().Set("X-Auth", "47f88c9fe58a6861c6f7da8f5a44e5b30fa1b7f293355fe6391aacbc9193e3ec")
 					w.Write([]byte(`{"message":"language not found: python-2.0.0"}`))
 				}))
 			},
