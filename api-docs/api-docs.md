@@ -208,11 +208,12 @@ Get's the problem that was generated that day in the following format.
 Get's the list of users problems.
 
 **Description**
-Get's the list of problems according to status.
-- All (when no query param is set).
-- Open (when query param `status=Open`).
-- Failed (when query param `status=Failed`).
-- Solved (when query param `status=Solved`).
+- Get's the list of problems according to status.
+    - All (when no query param is set).
+    - Open (when query param `status=Open`).
+    - Failed (when query param `status=Failed`).
+    - Solved (when query param `status=Solved`).
+- If the difficulty is given get's the list of problems according to the status and difficulty.
 
 **Auth** — Required
 
@@ -223,6 +224,7 @@ Get's the list of problems according to status.
 | Name | Type | Required | Description |
 |---|---|---|---|
 | status | string | NO | status of the problems (statuses: Open/Failed/Solved) |
+| difficulty | string | NO | difficulty of the problems (difficulty: Easy/Medium/Hard) |
 
 **Responses**
 
@@ -267,6 +269,7 @@ content (`raw_problem`, `problem_text`, `algorithm_tag`, `difficulty`, `ai_help`
 | Status | Category | When | Body |
 |---|---|---|---|
 | 400 | Expected | `status` query param is set but isn't one of Open/Failed/Solved | `{ "message" : "Bad Request" }` |
+| 400 | Expected | `difficulty` query param is set but isn't one of Easy/Medium/Hard | `{ "message" : "Bad Request" }` |
 | 401 | Expected | Invalid/missing/expired session cookie | `{ "message" : "Unauthorized" }` |
 | 500 | Operational | Reading problem from the database failed | `{ "message" : "internal server error" }` |
 

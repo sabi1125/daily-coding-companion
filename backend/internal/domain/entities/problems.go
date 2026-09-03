@@ -2,7 +2,10 @@ package entities
 
 import "time"
 
-type ProblemStatus string
+type (
+	ProblemStatus     string
+	ProblemDifficulty string
+)
 
 const (
 	ProblemOpen   = ProblemStatus("Open")
@@ -11,7 +14,8 @@ const (
 )
 
 type GetProblemParams struct {
-	Status string `query:"status" validate:"omitempty,oneof=Open Failed Solved"`
+	Status     string `query:"status" validate:"omitempty,oneof=Open Failed Solved"`
+	Difficulty string `query:"difficulty" validate:"omitempty,oneof=Easy Medium Hard"`
 }
 
 type GetProblemDetailParams struct {
