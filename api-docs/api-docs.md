@@ -208,11 +208,12 @@ Get's the problem that was generated that day in the following format.
 Get's the list of users problems.
 
 **Description**
-Get's the list of problems according to status.
-- All (when no query param is set).
-- Open (when query param `status=Open`).
-- Failed (when query param `status=Failed`).
-- Solved (when query param `status=Solved`).
+- Get's the list of problems according to status.
+    - All (when no query param is set).
+    - Open (when query param `status=Open`).
+    - Failed (when query param `status=Failed`).
+    - Solved (when query param `status=Solved`).
+- If the difficulty is given get's the list of problems according to the status and difficulty.
 
 **Auth** — Required
 
@@ -223,6 +224,7 @@ Get's the list of problems according to status.
 | Name | Type | Required | Description |
 |---|---|---|---|
 | status | string | NO | status of the problems (statuses: Open/Failed/Solved) |
+| difficulty | string | NO | difficulty of the problems (difficulty: Easy/Medium/Hard) |
 
 **Responses**
 
