@@ -43,30 +43,51 @@ func TestProblemsInteractor_GetProblems(t *testing.T) {
 	tests := []struct {
 		name        string
 		status      entities.ProblemStatus
+		difficulty  entities.ProblemDifficulty
 		prepareFunc func(mpr *inputportMock.MockProblemsRepositoryInputPort)
 		wantedError error
 	}{
 		{
-			name:   "success",
-			status: entities.ProblemStatus("All"),
+			name:       "success",
+			status:     entities.ProblemStatus("All"),
+			difficulty: "",
 			prepareFunc: func(mpr *inputportMock.MockProblemsRepositoryInputPort) {
-				mpr.EXPECT().GetProblems(gomock.Any(), testUserId, "All").Return(testProblems, nil)
+				mpr.EXPECT().GetProblems(gomock.Any(), testUserId, "All", "").Return(testProblems, nil)
 			},
 		},
 		{
-			name:   "forwards a specific status filter",
-			status: entities.ProblemStatus("Solved"),
+			name:       "forwards a specific status filter",
+			status:     entities.ProblemStatus("Solved"),
+			difficulty: "",
 			prepareFunc: func(mpr *inputportMock.MockProblemsRepositoryInputPort) {
-				mpr.EXPECT().GetProblems(gomock.Any(), testUserId, "Solved").Return(testProblems, nil)
+				mpr.EXPECT().GetProblems(gomock.Any(), testUserId, "Solved", "").Return(testProblems, nil)
 			},
 		},
 		{
-			name:   "fails to get problems",
-			status: entities.ProblemStatus("All"),
+			name:       "fails to get problems",
+			status:     entities.ProblemStatus("All"),
+			difficulty: "",
 			prepareFunc: func(mpr *inputportMock.MockProblemsRepositoryInputPort) {
-				mpr.EXPECT().GetProblems(gomock.Any(), testUserId, "All").Return(nil, errRepo)
+				mpr.EXPECT().GetProblems(gomock.Any(), testUserId, "All", "").Return(nil, errRepo)
 			},
 			wantedError: errRepo,
+		},
+		{
+			name:       "fails to get problems with difficulty",
+			status:     entities.ProblemStatus("All"),
+			difficulty: "Hard",
+			prepareFunc: func(mpr *inputportMock.MockProblemsRepositoryInputPort) {
+				mpr.EXPECT().GetProblems(gomock.Any(), testUserId, "All", "Hard").Return(nil, errRepo)
+			},
+			wantedError: errRepo,
+		},
+		{
+			name:       "success with difficulty",
+			status:     entities.ProblemStatus("All"),
+			difficulty: "Medium",
+			prepareFunc: func(mpr *inputportMock.MockProblemsRepositoryInputPort) {
+				mpr.EXPECT().GetProblems(gomock.Any(), testUserId, "All", "Medium").Return(testProblems, nil)
+			},
 		},
 	}
 
@@ -78,7 +99,7 @@ func TestProblemsInteractor_GetProblems(t *testing.T) {
 			interactor, mocks := newTestProblemsInteractor(ctrl)
 			tt.prepareFunc(mocks.problems)
 
-			problems, err := interactor.GetProblems(ctx, testUserId, tt.status)
+			problems, err := interactor.GetProblems(ctx, testUserId, tt.status, tt.difficulty)
 
 			if tt.wantedError != nil {
 				assert.EqualError(t, err, tt.wantedError.Error())

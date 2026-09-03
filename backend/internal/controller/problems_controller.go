@@ -50,7 +50,7 @@ func (controller *ProblemsController) GetProblems(c echo.Context) error {
 		problemStatus = entities.ProblemStatus(params.Status)
 	}
 
-	problems, err := controller.problemsInteractor.GetProblems(ctx, userId, problemStatus)
+	problems, err := controller.problemsInteractor.GetProblems(ctx, userId, problemStatus, entities.ProblemDifficulty(params.Difficulty))
 	if err != nil {
 		return err
 	}

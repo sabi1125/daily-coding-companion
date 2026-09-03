@@ -41,10 +41,10 @@ func NewProblemsInteractor(
 	}
 }
 
-func (interactor *ProblemsInteractor) GetProblems(ctx context.Context, userId string, status entities.ProblemStatus) (problems []entities.Problems, err error) {
+func (interactor *ProblemsInteractor) GetProblems(ctx context.Context, userId string, status entities.ProblemStatus, difficulty entities.ProblemDifficulty) (problems []entities.Problems, err error) {
 	logger.Info("ProblemInteractor: GetProblems")
 
-	problems, err = interactor.problemsRepository.GetProblems(ctx, userId, string(status))
+	problems, err = interactor.problemsRepository.GetProblems(ctx, userId, string(status), string(difficulty))
 	if err != nil {
 		return
 	}

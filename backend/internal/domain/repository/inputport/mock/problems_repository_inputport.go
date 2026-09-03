@@ -72,18 +72,18 @@ func (mr *MockProblemsRepositoryInputPortMockRecorder) GetProblemDetails(ctx, us
 }
 
 // GetProblems mocks base method.
-func (m *MockProblemsRepositoryInputPort) GetProblems(ctx context.Context, userId, status string) ([]entities.Problems, error) {
+func (m *MockProblemsRepositoryInputPort) GetProblems(ctx context.Context, userId, status, difficulty string) ([]entities.Problems, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetProblems", ctx, userId, status)
+	ret := m.ctrl.Call(m, "GetProblems", ctx, userId, status, difficulty)
 	ret0, _ := ret[0].([]entities.Problems)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetProblems indicates an expected call of GetProblems.
-func (mr *MockProblemsRepositoryInputPortMockRecorder) GetProblems(ctx, userId, status any) *gomock.Call {
+func (mr *MockProblemsRepositoryInputPortMockRecorder) GetProblems(ctx, userId, status, difficulty any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProblems", reflect.TypeOf((*MockProblemsRepositoryInputPort)(nil).GetProblems), ctx, userId, status)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProblems", reflect.TypeOf((*MockProblemsRepositoryInputPort)(nil).GetProblems), ctx, userId, status, difficulty)
 }
 
 // GetProblemsCount mocks base method.

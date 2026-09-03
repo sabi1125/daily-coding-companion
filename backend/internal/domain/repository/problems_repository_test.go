@@ -22,6 +22,7 @@ func TestProblemsRepository_GetProblems(t *testing.T) {
 		name       string
 		userId     string
 		status     string
+		difficulty string
 		setupMock  func(mock sqlmock.Sqlmock)
 		wantErr    bool
 		wantIds    []string
@@ -88,6 +89,23 @@ func TestProblemsRepository_GetProblems(t *testing.T) {
 			wantIds: []string{"p-solved"},
 		},
 		{
+			name:       "filters by difficulty at the SQL level",
+			userId:     "user-1",
+			status:     "All",
+			difficulty: "Easy",
+			setupMock: func(mock sqlmock.Sqlmock) {
+				mock.ExpectQuery("SELECT .problem_id.,.title.,.needs_review_flag.,.created_at. FROM .problems.").
+					WithArgs("Easy", "user-1").
+					WillReturnRows(sqlmock.NewRows([]string{"problem_id", "title", "needs_review_flag", "created_at"}).
+						AddRow("p-easy", "Easy Problem", false, now))
+
+				mock.ExpectQuery("SELECT \\* FROM .submitted_solutions.").
+					WithArgs("p-easy").
+					WillReturnRows(sqlmock.NewRows([]string{"solution_id", "problem_id", "status"}))
+			},
+			wantIds: []string{"p-easy"},
+		},
+		{
 			name:   "no problems for user returns empty, not an error",
 			userId: "user-1",
 			status: "All",
@@ -119,7 +137,7 @@ func TestProblemsRepository_GetProblems(t *testing.T) {
 			tt.setupMock(mock)
 
 			repo := NewProblemsRepository(db)
-			problems, err := repo.GetProblems(context.Background(), tt.userId, tt.status)
+			problems, err := repo.GetProblems(context.Background(), tt.userId, tt.status, tt.difficulty)
 
 			if tt.wantErr {
 				assert.Error(t, err)
