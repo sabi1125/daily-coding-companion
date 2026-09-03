@@ -269,6 +269,7 @@ content (`raw_problem`, `problem_text`, `algorithm_tag`, `difficulty`, `ai_help`
 | Status | Category | When | Body |
 |---|---|---|---|
 | 400 | Expected | `status` query param is set but isn't one of Open/Failed/Solved | `{ "message" : "Bad Request" }` |
+| 400 | Expected | `difficulty` query param is set but isn't one of Easy/Medium/Hard | `{ "message" : "Bad Request" }` |
 | 401 | Expected | Invalid/missing/expired session cookie | `{ "message" : "Unauthorized" }` |
 | 500 | Operational | Reading problem from the database failed | `{ "message" : "internal server error" }` |
 

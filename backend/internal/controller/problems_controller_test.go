@@ -49,6 +49,12 @@ func TestProblemsController_GetProblems(t *testing.T) {
 			expectedStatus: http.StatusBadRequest,
 		},
 		{
+			name:           "valid status invalid difficulty query param — 400",
+			query:          "?status=Solved&difficulty=bad",
+			mockSetup:      func(m *interactorMock.MockProblemsInteractorInputPort) {},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
 			name:           "missing user_id — 401",
 			query:          "",
 			omitUserID:     true,
