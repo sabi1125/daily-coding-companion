@@ -133,7 +133,7 @@ function History() {
               <div className="flex flex-row justify-around">
                 {
                   difficultyList.map(
-                    v => (<Button variant="outline" size="xs" onClick={() => { editDifficultyList(v); getUserProblems(status, difficulty) }}>{v}</Button>))
+                    v => (<Button variant="outline" size="xs" onClick={() => { editDifficultyList(v) }}>{v}</Button>))
                 }
               </div>
             </PopoverContent>
