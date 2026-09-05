@@ -9,7 +9,7 @@ import (
 )
 
 type ProblemsRepositoryInputPort interface {
-	GetProblems(ctx context.Context, userId string, status string, difficulty string) (problems []entities.Problems, err error)
+	GetProblems(ctx context.Context, userId string, status string, difficulty []entities.ProblemDifficulty) (problems []entities.Problems, err error)
 	GetProblemDetails(ctx context.Context, userId string, problemId string) (problem entities.Problems, err error)
 	CreateProblem(ctx context.Context, problem *entities.Problems) (err error)
 	GetTodaysproblem(ctx context.Context, userId string, todaysDate time.Time) (problem entities.Problems, err error)

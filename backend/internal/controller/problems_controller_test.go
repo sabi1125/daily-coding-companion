@@ -28,7 +28,7 @@ func TestProblemsController_GetProblems(t *testing.T) {
 			name:  "no status query param — fetches all",
 			query: "",
 			mockSetup: func(m *interactorMock.MockProblemsInteractorInputPort) {
-				m.EXPECT().GetProblems(gomock.Any(), "user-1", entities.ProblemStatus("All"), entities.ProblemDifficulty("")).
+				m.EXPECT().GetProblems(gomock.Any(), "user-1", entities.ProblemStatus("All"), []entities.ProblemDifficulty(nil)).
 					Return([]entities.Problems{{ProblemId: "p-1"}}, nil)
 			},
 			expectedStatus: http.StatusOK,
@@ -37,7 +37,7 @@ func TestProblemsController_GetProblems(t *testing.T) {
 			name:  "valid status query param",
 			query: "?status=Solved",
 			mockSetup: func(m *interactorMock.MockProblemsInteractorInputPort) {
-				m.EXPECT().GetProblems(gomock.Any(), "user-1", entities.ProblemStatus("Solved"), entities.ProblemDifficulty("")).
+				m.EXPECT().GetProblems(gomock.Any(), "user-1", entities.ProblemStatus("Solved"), []entities.ProblemDifficulty(nil)).
 					Return([]entities.Problems{}, nil)
 			},
 			expectedStatus: http.StatusOK,
@@ -65,7 +65,7 @@ func TestProblemsController_GetProblems(t *testing.T) {
 			name:  "interactor error propagates",
 			query: "",
 			mockSetup: func(m *interactorMock.MockProblemsInteractorInputPort) {
-				m.EXPECT().GetProblems(gomock.Any(), "user-1", entities.ProblemStatus("All"), entities.ProblemDifficulty("")).
+				m.EXPECT().GetProblems(gomock.Any(), "user-1", entities.ProblemStatus("All"), []entities.ProblemDifficulty(nil)).
 					Return(nil, response.NewDatabaseError(errors.New("db down")))
 			},
 			expectedStatus: http.StatusInternalServerError,
@@ -74,7 +74,7 @@ func TestProblemsController_GetProblems(t *testing.T) {
 			name:  "valid status query param with difficulty(Easy)",
 			query: "?status=Solved&difficulty=Easy",
 			mockSetup: func(m *interactorMock.MockProblemsInteractorInputPort) {
-				m.EXPECT().GetProblems(gomock.Any(), "user-1", entities.ProblemStatus("Solved"), entities.ProblemDifficulty("Easy")).
+				m.EXPECT().GetProblems(gomock.Any(), "user-1", entities.ProblemStatus("Solved"), []entities.ProblemDifficulty{"Easy"}).
 					Return([]entities.Problems{}, nil)
 			},
 			expectedStatus: http.StatusOK,
@@ -83,7 +83,7 @@ func TestProblemsController_GetProblems(t *testing.T) {
 			name:  "valid status query param with difficulty(Medium)",
 			query: "?status=Solved&difficulty=Medium",
 			mockSetup: func(m *interactorMock.MockProblemsInteractorInputPort) {
-				m.EXPECT().GetProblems(gomock.Any(), "user-1", entities.ProblemStatus("Solved"), entities.ProblemDifficulty("Medium")).
+				m.EXPECT().GetProblems(gomock.Any(), "user-1", entities.ProblemStatus("Solved"), []entities.ProblemDifficulty{"Medium"}).
 					Return([]entities.Problems{}, nil)
 			},
 			expectedStatus: http.StatusOK,
@@ -92,7 +92,16 @@ func TestProblemsController_GetProblems(t *testing.T) {
 			name:  "valid status query param with difficulty(Hard)",
 			query: "?status=Solved&difficulty=Hard",
 			mockSetup: func(m *interactorMock.MockProblemsInteractorInputPort) {
-				m.EXPECT().GetProblems(gomock.Any(), "user-1", entities.ProblemStatus("Solved"), entities.ProblemDifficulty("Hard")).
+				m.EXPECT().GetProblems(gomock.Any(), "user-1", entities.ProblemStatus("Solved"), []entities.ProblemDifficulty{"Hard"}).
+					Return([]entities.Problems{}, nil)
+			},
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name:  "valid status query param with multiple difficulty values",
+			query: "?status=Solved&difficulty=Easy&difficulty=Medium",
+			mockSetup: func(m *interactorMock.MockProblemsInteractorInputPort) {
+				m.EXPECT().GetProblems(gomock.Any(), "user-1", entities.ProblemStatus("Solved"), []entities.ProblemDifficulty{"Easy", "Medium"}).
 					Return([]entities.Problems{}, nil)
 			},
 			expectedStatus: http.StatusOK,
@@ -132,7 +141,7 @@ func TestProblemsController_GetProblems_ResponseShape(t *testing.T) {
 	rawProblem := "some raw problem text that should never reach the client here"
 
 	mockInteractor := interactorMock.NewMockProblemsInteractorInputPort(ctrl)
-	mockInteractor.EXPECT().GetProblems(gomock.Any(), "user-1", entities.ProblemStatus("All"), entities.ProblemDifficulty("")).
+	mockInteractor.EXPECT().GetProblems(gomock.Any(), "user-1", entities.ProblemStatus("All"), []entities.ProblemDifficulty(nil)).
 		Return([]entities.Problems{
 			{
 				ProblemId:       "p-1",

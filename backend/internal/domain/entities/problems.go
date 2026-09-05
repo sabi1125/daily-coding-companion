@@ -14,8 +14,8 @@ const (
 )
 
 type GetProblemParams struct {
-	Status     string `query:"status" validate:"omitempty,oneof=Open Failed Solved"`
-	Difficulty string `query:"difficulty" validate:"omitempty,oneof=Easy Medium Hard"`
+	Status     string   `query:"status" validate:"omitempty,oneof=Open Failed Solved"`
+	Difficulty []string `query:"difficulty" validate:"omitempty,dive,oneof=Easy Medium Hard"`
 }
 
 type GetProblemDetailParams struct {

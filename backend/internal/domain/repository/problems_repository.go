@@ -23,7 +23,7 @@ func NewProblemsRepository(db *gorm.DB) *ProblemsRepository {
 	}
 }
 
-func (repository *ProblemsRepository) GetProblems(ctx context.Context, userId string, status string, difficulty string) (problems []entities.Problems, err error) {
+func (repository *ProblemsRepository) GetProblems(ctx context.Context, userId string, status string, difficulty []entities.ProblemDifficulty) (problems []entities.Problems, err error) {
 	logger.Infof("ProblemsRepository: GetProblems")
 	db := tx.ExtractTx(ctx)
 	if db == nil {
@@ -32,8 +32,8 @@ func (repository *ProblemsRepository) GetProblems(ctx context.Context, userId st
 
 	query := db.Model(&entities.Problems{}).Select("problem_id", "title", "needs_review_flag", "created_at")
 
-	if difficulty != "" {
-		query = query.Where("difficulty = ?", difficulty)
+	if len(difficulty) > 0 {
+		query = query.Where("difficulty in ?", difficulty)
 	}
 
 	if err = query.Where("user_id = ?", userId).Order("created_at DESC").Preload("Submissions").

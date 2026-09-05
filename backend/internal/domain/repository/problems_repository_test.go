@@ -22,7 +22,7 @@ func TestProblemsRepository_GetProblems(t *testing.T) {
 		name       string
 		userId     string
 		status     string
-		difficulty string
+		difficulty []entities.ProblemDifficulty
 		setupMock  func(mock sqlmock.Sqlmock)
 		wantErr    bool
 		wantIds    []string
@@ -89,10 +89,10 @@ func TestProblemsRepository_GetProblems(t *testing.T) {
 			wantIds: []string{"p-solved"},
 		},
 		{
-			name:       "filters by difficulty at the SQL level",
+			name:       "filters by a single difficulty at the SQL level",
 			userId:     "user-1",
 			status:     "All",
-			difficulty: "Easy",
+			difficulty: []entities.ProblemDifficulty{"Easy"},
 			setupMock: func(mock sqlmock.Sqlmock) {
 				mock.ExpectQuery("SELECT .problem_id.,.title.,.needs_review_flag.,.created_at. FROM .problems.").
 					WithArgs("Easy", "user-1").
@@ -104,6 +104,24 @@ func TestProblemsRepository_GetProblems(t *testing.T) {
 					WillReturnRows(sqlmock.NewRows([]string{"solution_id", "problem_id", "status"}))
 			},
 			wantIds: []string{"p-easy"},
+		},
+		{
+			name:       "filters by multiple difficulties at the SQL level",
+			userId:     "user-1",
+			status:     "All",
+			difficulty: []entities.ProblemDifficulty{"Easy", "Medium"},
+			setupMock: func(mock sqlmock.Sqlmock) {
+				mock.ExpectQuery("SELECT .problem_id.,.title.,.needs_review_flag.,.created_at. FROM .problems.").
+					WithArgs("Easy", "Medium", "user-1").
+					WillReturnRows(sqlmock.NewRows([]string{"problem_id", "title", "needs_review_flag", "created_at"}).
+						AddRow("p-easy", "Easy Problem", false, now).
+						AddRow("p-medium", "Medium Problem", false, now))
+
+				mock.ExpectQuery("SELECT \\* FROM .submitted_solutions.").
+					WithArgs("p-easy", "p-medium").
+					WillReturnRows(sqlmock.NewRows([]string{"solution_id", "problem_id", "status"}))
+			},
+			wantIds: []string{"p-easy", "p-medium"},
 		},
 		{
 			name:   "no problems for user returns empty, not an error",
