@@ -72,7 +72,7 @@ func (mr *MockProblemsRepositoryInputPortMockRecorder) GetProblemDetails(ctx, us
 }
 
 // GetProblems mocks base method.
-func (m *MockProblemsRepositoryInputPort) GetProblems(ctx context.Context, userId, status, difficulty string) ([]entities.Problems, error) {
+func (m *MockProblemsRepositoryInputPort) GetProblems(ctx context.Context, userId, status string, difficulty []entities.ProblemDifficulty) ([]entities.Problems, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetProblems", ctx, userId, status, difficulty)
 	ret0, _ := ret[0].([]entities.Problems)

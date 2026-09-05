@@ -214,6 +214,7 @@ Get's the list of users problems.
     - Failed (when query param `status=Failed`).
     - Solved (when query param `status=Solved`).
 - If the difficulty is given get's the list of problems according to the status and difficulty.
+    - `difficulty` can be repeated to match any of the given difficulties (e.g. `difficulty=Easy&difficulty=Medium`).
 
 **Auth** — Required
 
@@ -224,7 +225,7 @@ Get's the list of users problems.
 | Name | Type | Required | Description |
 |---|---|---|---|
 | status | string | NO | status of the problems (statuses: Open/Failed/Solved) |
-| difficulty | string | NO | difficulty of the problems (difficulty: Easy/Medium/Hard) |
+| difficulty | string, repeatable | NO | difficulty of the problems (difficulty: Easy/Medium/Hard); repeat the param to match multiple difficulties |
 
 **Responses**
 

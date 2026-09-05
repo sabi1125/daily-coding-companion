@@ -10,13 +10,32 @@ import { useNavigate } from "react-router-dom"
 import DateToString from "@/util/dateToString"
 import { LoadingHistory } from "@/components/ui/loading-history"
 import { toast } from "sonner"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Button } from "@/components/ui/button"
+import { IoMdClose } from 'react-icons/io';
+import { FaCaretDown } from 'react-icons/fa';
 
-async function getUserProblems(status: string): Promise<ProblemResponse> {
+function createParamString(difficulty: string[]): string {
+  let paramString = ""
+  for (const value of difficulty) {
+    paramString = paramString + "&difficulty=" + value
+  }
+  return paramString
+}
+
+async function getUserProblems(status: string, difficulty: string[]): Promise<ProblemResponse> {
   if (status == "All") {
     status = ""
   }
-  const res = await api.get(`/problems?status=${status}`)
-  return res.data
+
+  if (difficulty.length > 0) {
+    const param = createParamString(difficulty)
+    const res = await api.get(`/problems?status=${status}${param}`)
+    return res.data
+  } else {
+    const res = await api.get(`/problems?status=${status}`)
+    return res.data
+  }
 }
 
 function History() {
@@ -25,14 +44,25 @@ function History() {
 
   const [problems, setProblems] = useState<ProblemResponse | null>()
   const [status, setStatus] = useState<string>("All")
+  const [difficulty, setDifficulty] = useState<string[]>([])
+  const difficultyList = ["Easy", "Medium", "Hard"]
 
   const tabStates = ["All", "Open", "Failed", "Solved"]
 
+  const editDifficultyList = async (diffString: string) => {
+    const index = difficulty.indexOf(diffString)
+    if (index !== -1) {
+      setDifficulty(prevList => prevList.filter(item => item !== diffString));
+    } else {
+      setDifficulty(prevList => [...prevList, diffString])
+    }
+  }
+
   useEffect(() => {
-    getUserProblems(status)
+    getUserProblems(status, difficulty)
       .then(s => { setProblems(s) })
       .catch((err) => { toast.error(getErrorMessage(err, "Couldn't get problems history. Please try again later.")); setProblems(null) })
-  }, [status])
+  }, [status, difficulty])
 
   if (problems === undefined) {
     return <LoadingHistory />
@@ -57,23 +87,59 @@ function History() {
 
       {/* Toggle bar */}
 
-      {(status === "All" && !hasProblems) ? null :
-        <ToggleGroup className={"rounded-lg bg-secondary p-1 gap-1"} value={[status]} onValueChange={(v) => {
-          if (v.length === 0) return
-          setStatus(v[0] ?? "All")
-        }}>
-          {tabStates.map(t => (
-            <ToggleGroupItem value={t}
-              key={t}
-              variant={"outline"}
-              className="h-6 px-3 text-xs rounded-md text-muted-background bg-background
+      <div className="flex flex-row justify-between">
+        <div>
+          {(status === "All" && !hasProblems) ? null :
+            <ToggleGroup className={"rounded-lg bg-secondary p-1 gap-1"} value={[status]} onValueChange={(v) => {
+              if (v.length === 0) return
+              setStatus(v[0] ?? "All")
+            }}>
+              {tabStates.map(t => (
+                <ToggleGroupItem value={t}
+                  key={t}
+                  variant={"outline"}
+                  className="h-6 px-3 text-xs rounded-md text-muted-background bg-background
            data-pressed:bg-foreground data-pressed:text-background data-pressed:shadow-sm
            not-data-pressed:hover:bg-transparent">
-              {t}
-            </ToggleGroupItem>
-          ))}
-        </ToggleGroup>
-      }
+                  {t}
+                </ToggleGroupItem>
+              ))}
+            </ToggleGroup>
+
+          }
+          {
+            difficulty.length === 0 ?
+              null
+              :
+              <div className="pt-5">
+                {
+                  difficulty.map((v) => (
+                    <Button onClick={() => {
+                      editDifficultyList(v)
+                    }}
+                      size="xs"
+                    >{v}
+                      <IoMdClose />
+                    </Button>
+                  ))
+                }
+              </div>
+          }
+        </div>
+        <div>
+          <Popover>
+            <PopoverTrigger render={<Button variant="outline" size="xs">Difficulty <FaCaretDown /></Button>} />
+            <PopoverContent className="w-44 p-1.5">
+              <div className="flex flex-row justify-around">
+                {
+                  difficultyList.map(
+                    v => (<Button variant="outline" size="xs" onClick={() => { editDifficultyList(v); getUserProblems(status, difficulty) }}>{v}</Button>))
+                }
+              </div>
+            </PopoverContent>
+          </Popover>
+        </div>
+      </div>
 
       { /* history table */}
 
