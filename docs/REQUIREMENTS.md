@@ -58,7 +58,10 @@ not just running locally.
 
 ### Nice-to-have
 
-- Streak / calendar heatmap — daily activity view.
+- Calendar heatmap — daily activity view (fixed 6-month window, no separate streak
+  counter/API — the heatmap already shows it visually). Colored by *timing*, not
+  solved/failed status: any submission counts (even backlog catch-up), a same-day
+  submission always wins as the strongest color.
 - Filter / group problems by algorithm tag.
 - Weak-area stats — e.g. performance broken down by topic.
 - Complexity analysis of a submitted solution.
@@ -97,10 +100,13 @@ not just running locally.
   problem. One ingest run per fetch attempt, not per day (a failed attempt can retry).
 - **Get Help** — the specific one-click, one-AI-call assistance feature. Capitalized as a
   feature name, not generic help/support.
-- **Streak** — consecutive days with at least one problem solved *on that day*. Computed
-  from submission timestamps, not from a problem's overall status — a problem solved days
-  late still shows `Solved`, but doesn't retroactively fix that day's streak. Not broken by
-  a genuinely failed ingest.
+- **Activity heatmap** — calendar view (GitHub-contributions-graph style) over a fixed
+  trailing 6-month window, tiered by day: blank (nothing submitted), catch-up (submission
+  landed on a day after the problem's own due date — shaded 1-5 by count, not deduplicated
+  by problem), same-day (a submission landed on the problem's own due date — flat green,
+  wins over any catch-up on the same day). Solved/Failed status doesn't affect color, only
+  timing does. Computed from submission timestamps, not from a problem's overall status. No
+  separate streak counter/API — consecutive days are read visually off the heatmap.
 - **Session (auth)** — the signed-in/signed-out state of the Google connection. Not a
   browsing/HTTP session.
 - **needs_review_flag** — a badge on a problem meaning parsing failed or came back
