@@ -144,8 +144,10 @@ bearing on this — it's just a day with no problem to submit against, not a bro
 
 `submitted_solutions` carries a denormalized `user_id` (copied from `problems.user_id` at
 insert time, never reassigned — a solution is never moved to a different problem) with a
-composite `(user_id, submitted_at)` index, so the heatmap query is a single indexed range
-scan with no join.
+composite `(user_id, submitted_at)` index, so filtering to one user's submissions is a
+single indexed range scan with no join. A join to `problems` is still needed after that, to
+read `problems.created_at` for the same-day/catch-up comparison — the denormalized
+`user_id` only removes the join for the user filter, not the whole query.
 
 ## Auth
 

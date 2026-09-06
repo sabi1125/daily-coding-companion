@@ -654,7 +654,6 @@ Get's submissions dates of within the previous 6 months and if submitted the sam
 2. Join `problems` and `submitted_solutions` tables and get the records for the past 6 months.
 3. If `problems.created_at` and `submitted_solutions.submitted_at` is the same date set `submitted_same_day_flag` to `true` else set it to false.
     - If getting the record fails, exit with `500 internal service error`.
-    - If there does not exist any records for the past 6 months for the user return `404 Submissions not found for the past 6 months`.
 4. Return record.
 
 **Auth** - Required
