@@ -118,15 +118,36 @@ preferences in Settings (e.g. "explain more simply," "skip the walkthrough") —
 the base prompt on every request, on top of it. They can steer tone/depth/format; they
 can't remove the required concept explanation or the fixed response structure above.
 
-## Streak
+## Activity heatmap
 
-Computed from submission timestamps, not from a problem's overall status. A problem shows
-`Solved` regardless of *when* it was solved, but the streak only counts a day if a solving
-submission's timestamp actually falls on that problem's due date. Solving a problem late
-doesn't retroactively fix an already-broken streak day.
+A calendar heatmap (GitHub-contributions-graph style) of daily solve activity, covering a
+fixed trailing 6-month window — not user-configurable. No separate streak counter/API: the
+heatmap already shows consecutive solved days visually, a dedicated streak number would be
+redundant.
 
-A genuinely failed ingest (no `problems` row ever created that day — see `state.md`) does
-**not** break the streak; a problem that existed but was never solved does.
+Computed from submission timestamps, not from a problem's overall status, and status
+(`Solved`/`Failed`) doesn't affect the color at all — only *when* the submission happened
+relative to the problem's due date matters. Cell for day D:
+
+- **Blank** — no submissions on D, regardless of status.
+- **Same-day (flat green)** — at least one submission on D (any status) for a problem whose
+  due date (its `problems.created_at` day) *is* D. Wins outright — a same-day submission on
+  D always paints flat green, no matter how many catch-up submissions also landed on D.
+- **Catch-up (gray, 1-5 shades)** — no same-day submission on D, but N submissions (any
+  status) on D for problems whose due date is *before* D. Shade scales with N, capped at 5.
+  Not deduplicated by problem — resubmitting the same problem twice on D counts as 2 toward
+  N. Rewarded on purpose: giving zero credit for going back to old problems only discourages
+  ever clearing a backlog.
+
+A genuinely failed ingest (no `problems` row ever created that day — see `state.md`) has no
+bearing on this — it's just a day with no problem to submit against, not a broken day.
+
+`submitted_solutions` carries a denormalized `user_id` (copied from `problems.user_id` at
+insert time, never reassigned — a solution is never moved to a different problem) with a
+composite `(user_id, submitted_at)` index, so filtering to one user's submissions is a
+single indexed range scan with no join. A join to `problems` is still needed after that, to
+read `problems.created_at` for the same-day/catch-up comparison — the denormalized
+`user_id` only removes the join for the user filter, not the whole query.
 
 ## Auth
 

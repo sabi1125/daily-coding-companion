@@ -638,3 +638,48 @@ Executes submitted code in a sandboxed environment (Piston) and returns the run 
 | 502 | Operational | Piston reached but returned an error/malformed response | `{ "message" : "Bad gateway" }` |
 | 503 | Operational | Piston unreachable (network/connection failure) | `{ "message" : "Service Unavailable" }` |
 
+---
+
+## Get submissions dates list API
+
+### `GET /submissions/dates`
+
+**Summary**
+Get's submissions dates of within the previous 6 months and if submitted the same day flag for logged in user.
+
+**Description**
+
+1. Validate the session cookie and get the calling `user_id` from it.
+    - If the session is missing/invalid/expired, exit with `401 Unauthorized`.
+2. Join `problems` and `submitted_solutions` tables and get the records for the past 6 months.
+3. If `problems.created_at` and `submitted_solutions.submitted_at` is the same date set `submitted_same_day_flag` to `true` else set it to false.
+    - If getting the record fails, exit with `500 internal service error`.
+4. Return record.
+
+**Auth** - Required
+
+**Cookie** - session.session_id
+
+**Responses**
+
+`200 Success`
+
+```json
+[
+    {
+        "submitted_at" : "2026-04-19",
+        "submitted_same_day_flag" : true
+    },
+    {
+        "submitted_at" : "2026-07-03",
+        "submitted_same_day_flag" : false
+    }
+]
+```
+
+**Errors**
+
+| Status | Category | When | Body |
+|---|---|---|---|
+| 401 | Expected | Invalid/missing/expired session cookie | `{ "message" : "Unauthorized" }` |
+| 500 | Operational | Failed to get records from the database | `{ "message" : "internal server error" }` |
