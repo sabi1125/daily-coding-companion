@@ -158,4 +158,5 @@ func RegisteredSubmittedSolutionsRoutes(
 	solutions.GET("/:id", controller.GetUserSubmissions)
 	solutions.POST("/:id", controller.SubmitSolutions)
 	solutions.POST("/run", controller.RunSubmission)
+	solutions.GET("/dates", controller.GetDatesForHeatMap)
 }

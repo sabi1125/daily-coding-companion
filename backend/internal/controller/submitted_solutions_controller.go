@@ -140,3 +140,30 @@ func (controller *SubmittedSolutionsController) RunSubmission(c echo.Context) er
 		Run:      res.Run,
 	})
 }
+
+func (controller *SubmittedSolutionsController) GetDatesForHeatMap(c echo.Context) error {
+	logger.Info("SubmissionController: GetDatesForHeatMap")
+
+	ctx := c.Request().Context()
+	userId := middleware.UserIDFromContext(ctx)
+	if userId == "" {
+		err := response.NewUnauthorized(errors.New("invalid user"))
+		return err
+	}
+
+	res, err := controller.submittedSolutionsInteractor.GetDatesForHeatMap(ctx, userId)
+	if err != nil {
+		return err
+	}
+
+	result := make([]response.HeatMapDates, len(res))
+
+	for i, heatMapDate := range res {
+		result[i] = response.HeatMapDates{
+			SubmittedAt:          heatMapDate.SubmittedAt,
+			SubmittedSameDayFlag: heatMapDate.SubmittedSameDayFlag,
+		}
+	}
+
+	return c.JSON(http.StatusOK, result)
+}
