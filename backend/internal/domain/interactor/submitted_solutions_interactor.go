@@ -106,12 +106,12 @@ func (interactor *SubmittedSolutionsInteractor) RunSubmission(ctx context.Contex
 }
 
 func (interactor *SubmittedSolutionsInteractor) GetDatesForHeatMap(ctx context.Context, userId string) (heatMapDates []response.HeatMapDates, err error) {
-	logger.Info("SubmittedSolutionsInteractor: GetDatedForHeatMap")
+	logger.Info("SubmittedSolutionsInteractor: GetDatesForHeatMap")
 
 	time := util.NewTimeProvider()
 	sixMonthsBeforeToday := time.SixMonthsBeforeToday()
 
-	heatMapDates, err = interactor.submittedSolutionsRepository.GetDatedForHeatMap(ctx, userId, sixMonthsBeforeToday)
+	heatMapDates, err = interactor.submittedSolutionsRepository.GetDatesForHeatMap(ctx, userId, sixMonthsBeforeToday)
 	if err != nil {
 		return
 	}

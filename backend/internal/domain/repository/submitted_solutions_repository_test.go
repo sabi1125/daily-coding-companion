@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"backend/internal/domain/entities"
+	"backend/internal/response"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/stretchr/testify/assert"
@@ -170,6 +171,76 @@ func TestSubmittedSolutionsRepository_SubmitSolution(t *testing.T) {
 			assert.Equal(t, input.ProblemId, created.ProblemId)
 			assert.Equal(t, input.Solution, created.Solution)
 			assert.Equal(t, input.Status, created.Status)
+			assert.NoError(t, mock.ExpectationsWereMet())
+		})
+	}
+}
+
+func TestSubmittedSolutionsRepository_GetDatesForHeatMap(t *testing.T) {
+	sixMonthsAgo := time.Now().AddDate(0, -6, 0)
+
+	tests := []struct {
+		name      string
+		userId    string
+		wantErr   bool
+		want      []response.HeatMapDates
+		setupMock func(mock sqlmock.Sqlmock)
+	}{
+		{
+			name:   "returns submission dates with the same-day flag",
+			userId: "user-1",
+			setupMock: func(mock sqlmock.Sqlmock) {
+				mock.ExpectQuery(regexp.QuoteMeta("SELECT s.submitted_at, (date(s.submitted_at) = date(p.created_at)) as submitted_same_day_flag FROM submitted_solutions s LEFT JOIN problems p ON s.problem_id = p.problem_id WHERE p.user_id = ? AND s.submitted_at >= ? ORDER BY s.submitted_at ASC")).
+					WithArgs("user-1", sqlmock.AnyArg()).
+					WillReturnRows(sqlmock.NewRows([]string{"submitted_at", "submitted_same_day_flag"}).
+						AddRow("2026-04-19", true).
+						AddRow("2026-07-03", false))
+			},
+			want: []response.HeatMapDates{
+				{SubmittedAt: "2026-04-19", SubmittedSameDayFlag: true},
+				{SubmittedAt: "2026-07-03", SubmittedSameDayFlag: false},
+			},
+		},
+		{
+			name:   "no submissions in the last 6 months — empty result, not an error",
+			userId: "user-1",
+			setupMock: func(mock sqlmock.Sqlmock) {
+				mock.ExpectQuery(regexp.QuoteMeta("SELECT s.submitted_at, (date(s.submitted_at) = date(p.created_at)) as submitted_same_day_flag FROM submitted_solutions s LEFT JOIN problems p ON s.problem_id = p.problem_id WHERE p.user_id = ? AND s.submitted_at >= ? ORDER BY s.submitted_at ASC")).
+					WithArgs("user-1", sqlmock.AnyArg()).
+					WillReturnRows(sqlmock.NewRows([]string{"submitted_at", "submitted_same_day_flag"}))
+			},
+			want: []response.HeatMapDates{},
+		},
+		{
+			name:    "returns a database error when the query fails",
+			userId:  "user-1",
+			wantErr: true,
+			setupMock: func(mock sqlmock.Sqlmock) {
+				mock.ExpectQuery(regexp.QuoteMeta("SELECT s.submitted_at, (date(s.submitted_at) = date(p.created_at)) as submitted_same_day_flag FROM submitted_solutions s LEFT JOIN problems p ON s.problem_id = p.problem_id WHERE p.user_id = ? AND s.submitted_at >= ? ORDER BY s.submitted_at ASC")).
+					WithArgs("user-1", sqlmock.AnyArg()).
+					WillReturnError(errors.New("db connection lost"))
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			db, mock, cleanup := setupMockDB(t)
+			defer cleanup()
+
+			tt.setupMock(mock)
+
+			repo := NewSubmittedSolutionsRepository(db)
+			dates, err := repo.GetDatesForHeatMap(context.Background(), tt.userId, sixMonthsAgo)
+
+			if tt.wantErr {
+				assert.Error(t, err)
+				assert.NoError(t, mock.ExpectationsWereMet())
+				return
+			}
+
+			assert.NoError(t, err)
+			assert.Equal(t, tt.want, dates)
 			assert.NoError(t, mock.ExpectationsWereMet())
 		})
 	}

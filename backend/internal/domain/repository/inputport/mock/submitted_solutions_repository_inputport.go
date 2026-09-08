@@ -43,19 +43,19 @@ func (m *MockSubmittedSolutionsRepositoryInputPort) EXPECT() *MockSubmittedSolut
 	return m.recorder
 }
 
-// GetDatedForHeatMap mocks base method.
-func (m *MockSubmittedSolutionsRepositoryInputPort) GetDatedForHeatMap(ctx context.Context, userId string, sixMonthsBeforeToday time.Time) ([]response.HeatMapDates, error) {
+// GetDatesForHeatMap mocks base method.
+func (m *MockSubmittedSolutionsRepositoryInputPort) GetDatesForHeatMap(ctx context.Context, userId string, sixMonthsBeforeToday time.Time) ([]response.HeatMapDates, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetDatedForHeatMap", ctx, userId, sixMonthsBeforeToday)
+	ret := m.ctrl.Call(m, "GetDatesForHeatMap", ctx, userId, sixMonthsBeforeToday)
 	ret0, _ := ret[0].([]response.HeatMapDates)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetDatedForHeatMap indicates an expected call of GetDatedForHeatMap.
-func (mr *MockSubmittedSolutionsRepositoryInputPortMockRecorder) GetDatedForHeatMap(ctx, userId, sixMonthsBeforeToday any) *gomock.Call {
+// GetDatesForHeatMap indicates an expected call of GetDatesForHeatMap.
+func (mr *MockSubmittedSolutionsRepositoryInputPortMockRecorder) GetDatesForHeatMap(ctx, userId, sixMonthsBeforeToday any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDatedForHeatMap", reflect.TypeOf((*MockSubmittedSolutionsRepositoryInputPort)(nil).GetDatedForHeatMap), ctx, userId, sixMonthsBeforeToday)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDatesForHeatMap", reflect.TypeOf((*MockSubmittedSolutionsRepositoryInputPort)(nil).GetDatesForHeatMap), ctx, userId, sixMonthsBeforeToday)
 }
 
 // GetSubmittedSolutions mocks base method.

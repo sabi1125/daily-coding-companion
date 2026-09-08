@@ -465,3 +465,63 @@ func TestSubmittedSolutionsController_RunSubmission_ResponseShape(t *testing.T) 
 		assert.Equal(t, 0, body.Compile.Code)
 	}
 }
+
+func TestSubmittedSolutionsController_GetDatesForHeatMap(t *testing.T) {
+	tests := []struct {
+		name           string
+		omitUserID     bool
+		mockSetup      func(m *interactorMock.MockSubmittedSolutionsInteractorInputPort)
+		expectedStatus int
+	}{
+		{
+			name: "success",
+			mockSetup: func(m *interactorMock.MockSubmittedSolutionsInteractorInputPort) {
+				m.EXPECT().GetDatesForHeatMap(gomock.Any(), "user-1").Return([]response.HeatMapDates{{SubmittedAt: "2026-03-04", SubmittedSameDayFlag: true}}, nil)
+			},
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name: "no relevant submissions - still 200 with an empty result",
+			mockSetup: func(m *interactorMock.MockSubmittedSolutionsInteractorInputPort) {
+				m.EXPECT().GetDatesForHeatMap(gomock.Any(), "user-1").Return([]response.HeatMapDates{}, nil)
+			},
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name:           "missing user_id - 401",
+			omitUserID:     true,
+			mockSetup:      func(m *interactorMock.MockSubmittedSolutionsInteractorInputPort) {},
+			expectedStatus: http.StatusUnauthorized,
+		},
+		{
+			name: "interacotor error propagates",
+			mockSetup: func(m *interactorMock.MockSubmittedSolutionsInteractorInputPort) {
+				m.EXPECT().GetDatesForHeatMap(gomock.Any(), "user-1").Return(nil, response.NewDatabaseError(errors.New("db down")))
+			},
+			expectedStatus: http.StatusInternalServerError,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			mockInteractor := interactorMock.NewMockSubmittedSolutionsInteractorInputPort(ctrl)
+			tt.mockSetup(mockInteractor)
+
+			e := newTestEcho()
+			controller := NewSubmittedSolutionsController(mockInteractor)
+			e.GET("/submissions/dates", controller.GetDatesForHeatMap)
+
+			req := httptest.NewRequest(http.MethodGet, "/submissions/dates", nil)
+			if !tt.omitUserID {
+				req = withUserID(req, "user-1")
+			}
+			rec := httptest.NewRecorder()
+			e.ServeHTTP(rec, req)
+
+			assert.Equal(t, tt.expectedStatus, rec.Code)
+		})
+	}
+}

@@ -57,8 +57,8 @@ func (repository *SubmittedSolutionsRepository) SubmitSolution(ctx context.Conte
 	return
 }
 
-func (repository *SubmittedSolutionsRepository) GetDatedForHeatMap(ctx context.Context, userId string, sixMonthsBeforeToday time.Time) (submittedDates []response.HeatMapDates, err error) {
-	logger.Info("SubmittedSolutionRepository: GetDatedForHeatMap")
+func (repository *SubmittedSolutionsRepository) GetDatesForHeatMap(ctx context.Context, userId string, sixMonthsBeforeToday time.Time) (submittedDates []response.HeatMapDates, err error) {
+	logger.Info("SubmittedSolutionRepository: GetDatesForHeatMap")
 	db := tx.ExtractTx(ctx)
 	if db == nil {
 		db = repository.db
