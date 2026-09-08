@@ -1,7 +1,9 @@
 //go:generate mockgen -source=$GOFILE -destination=mock/$GOFILE -package=mock
 package util
 
-import "time"
+import (
+	"time"
+)
 
 // TimeProvider wraps time.Now() behind an interface — same reasoning as
 // UUIDGenerator: inject it instead of calling time.Now() inline, so tests
@@ -11,6 +13,7 @@ type TimeProvider interface {
 	Now() time.Time
 	ExpiryTimeCalculator() time.Time
 	TodaysDate() time.Time
+	SixMonthsBeforeToday() time.Time
 }
 
 var JST = time.FixedZone("JST", 9*60*60)
@@ -34,4 +37,12 @@ func (t *timeProvider) ExpiryTimeCalculator() time.Time {
 func (t *timeProvider) TodaysDate() time.Time {
 	now := time.Now().In(JST)
 	return time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, JST)
+}
+
+func (t *timeProvider) SixMonthsBeforeToday() time.Time {
+	pastTime := time.Now().AddDate(0, -6, 0).In(JST)
+
+	y, m, d := pastTime.Date()
+
+	return time.Date(y, m, d, 0, 0, 0, 0, pastTime.Location())
 }

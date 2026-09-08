@@ -34,3 +34,8 @@ type Run struct {
 	Message  *string `json:"message"`
 	Status   *string `json:"status"`
 }
+
+type HeatMapDates struct {
+	SubmittedAt          string `json:"submitted_at"`
+	SubmittedSameDayFlag bool   `json:"submitted_same_day_flag"`
+}
