@@ -190,7 +190,7 @@ func TestSubmittedSolutionsRepository_GetDatesForHeatMap(t *testing.T) {
 			name:   "returns submission dates with the same-day flag",
 			userId: "user-1",
 			setupMock: func(mock sqlmock.Sqlmock) {
-				mock.ExpectQuery(regexp.QuoteMeta("SELECT s.submitted_at, (date(s.submitted_at) = date(p.created_at)) as submitted_same_day_flag FROM submitted_solutions s LEFT JOIN problems p ON s.problem_id = p.problem_id WHERE p.user_id = ? AND s.submitted_at >= ? ORDER BY s.submitted_at ASC")).
+				mock.ExpectQuery(regexp.QuoteMeta("SELECT date(s.submitted_at) as submitted_at, (date(s.submitted_at) = date(p.created_at)) as submitted_same_day_flag FROM submitted_solutions s LEFT JOIN problems p ON s.problem_id = p.problem_id WHERE p.user_id = ? AND s.submitted_at >= ? ORDER BY s.submitted_at ASC")).
 					WithArgs("user-1", sqlmock.AnyArg()).
 					WillReturnRows(sqlmock.NewRows([]string{"submitted_at", "submitted_same_day_flag"}).
 						AddRow("2026-04-19", true).
@@ -205,7 +205,7 @@ func TestSubmittedSolutionsRepository_GetDatesForHeatMap(t *testing.T) {
 			name:   "no submissions in the last 6 months — empty result, not an error",
 			userId: "user-1",
 			setupMock: func(mock sqlmock.Sqlmock) {
-				mock.ExpectQuery(regexp.QuoteMeta("SELECT s.submitted_at, (date(s.submitted_at) = date(p.created_at)) as submitted_same_day_flag FROM submitted_solutions s LEFT JOIN problems p ON s.problem_id = p.problem_id WHERE p.user_id = ? AND s.submitted_at >= ? ORDER BY s.submitted_at ASC")).
+				mock.ExpectQuery(regexp.QuoteMeta("SELECT date(s.submitted_at) as submitted_at, (date(s.submitted_at) = date(p.created_at)) as submitted_same_day_flag FROM submitted_solutions s LEFT JOIN problems p ON s.problem_id = p.problem_id WHERE p.user_id = ? AND s.submitted_at >= ? ORDER BY s.submitted_at ASC")).
 					WithArgs("user-1", sqlmock.AnyArg()).
 					WillReturnRows(sqlmock.NewRows([]string{"submitted_at", "submitted_same_day_flag"}))
 			},
@@ -216,7 +216,7 @@ func TestSubmittedSolutionsRepository_GetDatesForHeatMap(t *testing.T) {
 			userId:  "user-1",
 			wantErr: true,
 			setupMock: func(mock sqlmock.Sqlmock) {
-				mock.ExpectQuery(regexp.QuoteMeta("SELECT s.submitted_at, (date(s.submitted_at) = date(p.created_at)) as submitted_same_day_flag FROM submitted_solutions s LEFT JOIN problems p ON s.problem_id = p.problem_id WHERE p.user_id = ? AND s.submitted_at >= ? ORDER BY s.submitted_at ASC")).
+				mock.ExpectQuery(regexp.QuoteMeta("SELECT date(s.submitted_at) as submitted_at, (date(s.submitted_at) = date(p.created_at)) as submitted_same_day_flag FROM submitted_solutions s LEFT JOIN problems p ON s.problem_id = p.problem_id WHERE p.user_id = ? AND s.submitted_at >= ? ORDER BY s.submitted_at ASC")).
 					WithArgs("user-1", sqlmock.AnyArg()).
 					WillReturnError(errors.New("db connection lost"))
 			},

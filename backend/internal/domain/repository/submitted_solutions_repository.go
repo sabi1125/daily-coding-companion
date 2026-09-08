@@ -64,7 +64,7 @@ func (repository *SubmittedSolutionsRepository) GetDatesForHeatMap(ctx context.C
 		db = repository.db
 	}
 
-	if err = db.Select("s.submitted_at, (date(s.submitted_at) = date(p.created_at)) as submitted_same_day_flag").
+	if err = db.Select("date(s.submitted_at) as submitted_at, (date(s.submitted_at) = date(p.created_at)) as submitted_same_day_flag").
 		Table("submitted_solutions s").
 		Joins("LEFT JOIN problems p ON s.problem_id = p.problem_id").
 		Where("p.user_id = ? AND s.submitted_at >= ?", userId, sixMonthsBeforeToday).Order("s.submitted_at ASC").
