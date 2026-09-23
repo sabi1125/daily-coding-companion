@@ -63,6 +63,9 @@ of anything wrong with your account.
 [`docs/DECISIONS.md`](docs/DECISIONS.md) — the engineering decisions behind the stack, the
 auth approach, and cost.
 
+[`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) — how the production deployment is set up on
+Railway and DigitalOcean, and how to rebuild it.
+
 ## License
 
 [MIT](LICENSE)

@@ -2,5 +2,4 @@ backend/.codeseed.*
 .env
 backend/.env
 frontend/.env
-docs/deployment.md
 piston/.env
