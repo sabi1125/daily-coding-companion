@@ -10,7 +10,7 @@ loop) around it.
 **Trigger 1 — cron**
 
 1. Fires once daily (schedule below), runs as its own subcommand on the same binary as the
-   web server: `./backend ingest` vs `./backend serve` — cron can't reach into the
+   web server: `./backend ingest` vs plain `./backend` (no arguments starts the server) — cron can't reach into the
    already-running server process, Railway starts a fresh one on schedule.
 2. On start, queries `oauth_credentials` for every `user_id` — that's the full list of
    connected users.

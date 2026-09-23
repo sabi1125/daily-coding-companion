@@ -137,10 +137,10 @@ show stdout/stderr.
 3. B's `privileged`-container requirement is a real cost, but it's a hosting-location
    problem, not a reason to avoid self-hosting altogether.
 
-**Trade-off accepted / still open:** because Piston needs `privileged: true`, it likely
-can't deploy to Railway alongside `app`. Local dev runs it via `docker-compose` same as
-MySQL; the production host for Piston specifically (self-hosted VPS, Fly.io Machines,
-etc.) is still an open decision, separate from wherever `app` itself deploys.
+**Trade-off accepted:** because Piston needs `privileged: true`, it can't deploy to Railway
+alongside `app`. Local dev runs it via `docker-compose` same as MySQL. In production it runs
+on its own DigitalOcean droplet, separate from Railway, and the backend calls it over the
+network with a shared secret. Setup details are in `DEPLOYMENT.md`.
 
 ## AI cost
 Two calls touch the API: **ingest parse** (once a day at ingest) and **Get Help** (at most
